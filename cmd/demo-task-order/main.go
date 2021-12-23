@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 
@@ -41,13 +42,15 @@ func newReaderSource(reader io.Reader, splitter Splitter) <-chan taskorder.Depen
 func newFileSource(filename string, splitter Splitter) <-chan taskorder.Dependency {
 	if file, err := os.Open(filename); err == nil {
 		return newReaderSource(file, splitter)
+	} else {
+		log.Fatalf("cannot create file source: %v", err)
 	}
 
 	return nil
 }
 
 func main() {
-	fileDependencySource := newFileSource("test/test-01.in", defaultStringSplitter())
+	fileDependencySource := newFileSource("test/test-02.in", defaultStringSplitter())
 	var sequence []taskorder.Node
 	if taskorder.NewResolver(fileDependencySource).Resolve(&sequence) {
 		fmt.Println("Done")
