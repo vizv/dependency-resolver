@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	resolver "github.com/vizv/pkg/dependency-resolver"
@@ -72,7 +73,8 @@ func main() {
 			for _, node := range sequence {
 				values = append(values, fmt.Sprintf("%v", node.Value))
 			}
-			fmt.Println(strings.Join(values, ","))
+			sort.Strings(values)
+			fmt.Println(strings.Join(values, " "))
 		}
 	} else {
 		log.Fatalln("failed to resolve dependency:", err)

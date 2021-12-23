@@ -93,10 +93,8 @@ func NewResolver(dependencySource <-chan Dependency) Resolver {
 	return resolver
 }
 
-func (r resolver) leaves() *mapset.Set {
-	leaves := r.childNodes.Difference(r.parentNodes)
-
-	return &leaves
+func (r resolver) leaves() mapset.Set {
+	return r.childNodes.Difference(r.parentNodes)
 }
 
 func (r resolver) resetVisited() {
@@ -107,7 +105,7 @@ func (r resolver) resetVisited() {
 
 func (r resolver) Resolve() ([][]Node, error) {
 	maxLevel := uint(0)
-	for leaf := range (*r.leaves()).Iter() {
+	for leaf := range r.leaves().Iter() {
 		r.resetVisited()
 		leafLevel := r.resolve(leaf.(*Node), 0)
 		if leafLevel == 0 {
