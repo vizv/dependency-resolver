@@ -10,30 +10,44 @@ import (
 	taskorder "github.com/vizv/pkg/task-order"
 )
 
-func NewReaderSource(reader io.Reader) <-chan taskorder.Dependency {
+type Splitter func(string) taskorder.Dependency
+
+const DEFAULT_SEP = " "
+
+func newStringSplitter(sep string) Splitter {
+	return func(dependencyString string) taskorder.Dependency {
+		tokens := strings.SplitN(dependencyString, sep, 2)
+
+		return taskorder.Dependency{Parent: tokens[0], Child: tokens[1]}
+	}
+}
+
+func defaultStringSplitter() Splitter {
+	return newStringSplitter(DEFAULT_SEP)
+}
+
+func newReaderSource(reader io.Reader, splitter Splitter) <-chan taskorder.Dependency {
 	ch := make(chan taskorder.Dependency)
 	scanner := bufio.NewScanner(reader)
 	go func() {
 		for scanner.Scan() {
-			tokens := strings.SplitN(scanner.Text(), " ", 2)
-			dependency := taskorder.Dependency{Parent: tokens[0], Child: tokens[1]}
-			ch <- dependency
+			ch <- splitter(scanner.Text())
 		}
 		close(ch)
 	}()
 	return ch
 }
 
-func NewFileSource(filename string) <-chan taskorder.Dependency {
+func newFileSource(filename string, splitter Splitter) <-chan taskorder.Dependency {
 	if file, err := os.Open(filename); err == nil {
-		return NewReaderSource(file)
+		return newReaderSource(file, splitter)
 	}
 
 	return nil
 }
 
 func main() {
-	fileDependencySource := NewFileSource("test/test-01.in")
+	fileDependencySource := newFileSource("test/test-01.in", defaultStringSplitter())
 	var sequence []taskorder.Node
 	if taskorder.NewResolver(fileDependencySource).Resolve(&sequence) {
 		fmt.Println("Done")
