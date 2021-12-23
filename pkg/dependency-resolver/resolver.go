@@ -1,7 +1,7 @@
 package dependencyresolver
 
 import (
-	mapset "github.com/vizv/pkg/set"
+	mapset "github.com/vizv/dependency-resolver/pkg/set"
 )
 
 type Resolver interface {

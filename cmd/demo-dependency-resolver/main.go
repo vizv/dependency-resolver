@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	resolver "github.com/vizv/pkg/dependency-resolver"
+	resolver "github.com/vizv/dependency-resolver/pkg/dependency-resolver"
 )
 
 type Splitter func(string) resolver.Dependency

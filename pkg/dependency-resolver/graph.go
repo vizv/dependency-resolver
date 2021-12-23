@@ -3,7 +3,7 @@ package dependencyresolver
 import (
 	"fmt"
 
-	mapset "github.com/vizv/pkg/set"
+	mapset "github.com/vizv/dependency-resolver/pkg/set"
 )
 
 // Node of a dependency (directed) graph

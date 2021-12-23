@@ -1,4 +1,4 @@
-SOURCE := cmd/demo-task-order
+SOURCE := cmd/demo-dependency-resolver
 TARGET := a.out
 
 .PHONY: all clean $(TARGET)
