@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	mapset "github.com/deckarep/golang-set"
+	mapset "github.com/vizv/pkg/set"
 )
 
 type Dependency struct {
@@ -26,7 +26,7 @@ func NewCircularDependencyError() error {
 }
 
 func (n Node) String() string {
-	return fmt.Sprintf("Node{value=%v level=%d children=%d}", n.Value, n.Level, n.Children.Cardinality())
+	return fmt.Sprintf("Node{value=%v level=%d children=%d}", n.Value, n.Level, n.Children.Size())
 }
 
 type resolver struct {
@@ -51,6 +51,8 @@ func (r resolver) getOrCreateNode(value interface{}) *Node {
 }
 
 func (r resolver) addDependency(dependency *Dependency) {
+	// fmt.Println("add dependency", dependency.Parent, dependency.Child)
+
 	parent := r.getOrCreateNode(dependency.Parent)
 	child := r.getOrCreateNode(dependency.Child)
 
@@ -139,7 +141,8 @@ func (r resolver) Resolve() ([]Node, error) {
 		}
 	}
 
-	sequence := make([]Node, (*r.all()).Cardinality())
+	nodeSize := (*r.all()).Size()
+	sequence := make([]Node, nodeSize)
 	for i, node := range (*r.all()).ToSlice() {
 		sequence[i] = *node.(*Node)
 	}
