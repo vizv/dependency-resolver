@@ -12,10 +12,6 @@ type Dependency struct {
 	Child  interface{}
 }
 
-type DependencyEnumerator interface {
-	NextDependency(dependency *Dependency) bool
-}
-
 type Node struct {
 	Value    interface{}
 	Children mapset.Set
@@ -93,15 +89,15 @@ func (r resolver) resolve(n *Node, level uint) bool {
 	return true
 }
 
-func NewResolver(dependencies DependencyEnumerator) resolver {
+func NewResolver(dependencies <-chan Dependency) resolver {
 	resolver := resolver{}
 	resolver.nodes = make(map[interface{}]*Node)
 	resolver.parentsMap = make(map[*Node]*mapset.Set)
 	resolver.parentNodes = mapset.NewSet()
 	resolver.childNodes = mapset.NewSet()
 
-	var dependency Dependency
-	for dependencies.NextDependency(&dependency) {
+	// var dependency Dependency
+	for dependency := range dependencies {
 		resolver.addDependency(&dependency)
 	}
 

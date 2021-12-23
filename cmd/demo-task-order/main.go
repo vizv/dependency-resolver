@@ -3,53 +3,39 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	taskorder "github.com/vizv/pkg/task-order"
 )
 
-type fileDependenciesEnumerator struct {
-	scanner bufio.Scanner
-	channel chan *taskorder.Dependency
-}
-
-func NewFileDependencyEnumerator(filename string) (*fileDependenciesEnumerator, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	enumerator := &fileDependenciesEnumerator{}
-	enumerator.scanner = *bufio.NewScanner(file)
-	enumerator.channel = make(chan *taskorder.Dependency)
-
+func NewReaderSource(reader io.Reader) <-chan taskorder.Dependency {
+	ch := make(chan taskorder.Dependency)
+	scanner := bufio.NewScanner(reader)
 	go func() {
-		for enumerator.scanner.Scan() {
-			tokens := strings.SplitN(enumerator.scanner.Text(), " ", 2)
-			dependency := &taskorder.Dependency{Parent: tokens[0], Child: tokens[1]}
-			enumerator.channel <- dependency
+		for scanner.Scan() {
+			tokens := strings.SplitN(scanner.Text(), " ", 2)
+			dependency := taskorder.Dependency{Parent: tokens[0], Child: tokens[1]}
+			ch <- dependency
 		}
-		enumerator.channel <- nil
+		close(ch)
 	}()
-
-	return enumerator, nil
+	return ch
 }
 
-func (enumerator fileDependenciesEnumerator) NextDependency(dependency *taskorder.Dependency) bool {
-	next := <-enumerator.channel
-	if next == nil {
-		close(enumerator.channel)
-		return false
+func NewFileSource(filename string) <-chan taskorder.Dependency {
+	if file, err := os.Open(filename); err == nil {
+		return NewReaderSource(file)
 	}
-	*dependency = *next
-	return true
+
+	return nil
 }
 
 func main() {
-	enumerator, _ := NewFileDependencyEnumerator("test/test-01.in")
+	fileDependencySource := NewFileSource("test/test-01.in")
 	var sequence []taskorder.Node
-	if taskorder.NewResolver(enumerator).Resolve(&sequence) {
+	if taskorder.NewResolver(fileDependencySource).Resolve(&sequence) {
 		fmt.Println("Done")
 	} else {
 		fmt.Println("Fail")
