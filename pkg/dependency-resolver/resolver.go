@@ -30,8 +30,6 @@ func (r resolver) getOrCreateNode(value interface{}) *Node {
 }
 
 func (r resolver) addDependency(dependency *Dependency) {
-	// fmt.Println("add dependency", dependency.Parent, dependency.Child)
-
 	parent := r.getOrCreateNode(dependency.Dependant)
 	child := r.getOrCreateNode(dependency.Prerequisite)
 
@@ -52,7 +50,6 @@ func (r resolver) addDependency(dependency *Dependency) {
 func (r resolver) resolve(n *Node, level uint) uint {
 	level += 1
 	maxLevel := level
-	// fmt.Printf("resolve %v[visited: %v, level: %d] at level %d\n", n.Value, n.visited, n.Level, level)
 
 	if n.visited {
 		return 0
@@ -87,7 +84,6 @@ func NewResolver(dependencySource <-chan Dependency) Resolver {
 	resolver.parentNodes = mapset.NewSet()
 	resolver.childNodes = mapset.NewSet()
 
-	// var dependency Dependency
 	for dependency := range dependencySource {
 		resolver.addDependency(&dependency)
 	}
