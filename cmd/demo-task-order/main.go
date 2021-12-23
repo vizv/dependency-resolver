@@ -50,9 +50,24 @@ func newFileSource(filename string, splitter Splitter) <-chan taskorder.Dependen
 }
 
 func main() {
-	fileDependencySource := newFileSource("test/test-02.in", defaultStringSplitter())
+	splitter := defaultStringSplitter()
+	var dependencySource <-chan taskorder.Dependency
+
+	switch len(os.Args) {
+	case 1:
+		log.Println("Read from stdin")
+		dependencySource = newReaderSource(os.Stdin, splitter)
+	case 2:
+		filename := os.Args[1]
+		log.Printf("Read from '%s'\n", filename)
+		dependencySource = newFileSource(filename, splitter)
+	default:
+		args := os.Args[1:]
+		log.Fatalln("Invalid arguments:", strings.Join(args, " "))
+	}
+
 	var sequence []taskorder.Node
-	if taskorder.NewResolver(fileDependencySource).Resolve(&sequence) {
+	if taskorder.NewResolver(dependencySource).Resolve(&sequence) {
 		fmt.Println("Done")
 	} else {
 		fmt.Println("Fail")
