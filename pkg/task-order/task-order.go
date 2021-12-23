@@ -1,6 +1,7 @@
 package taskorder
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
@@ -18,6 +19,10 @@ type Node struct {
 	Level    uint
 
 	visited bool
+}
+
+func NewCircularDependencyError() error {
+	return errors.New("circular dependency detected")
 }
 
 func (n Node) String() string {
@@ -89,7 +94,7 @@ func (r resolver) resolve(n *Node, level uint) bool {
 	return true
 }
 
-func NewResolver(dependencies <-chan Dependency) resolver {
+func NewResolver(dependencySource <-chan Dependency) resolver {
 	resolver := resolver{}
 	resolver.nodes = make(map[interface{}]*Node)
 	resolver.parentsMap = make(map[*Node]*mapset.Set)
@@ -97,7 +102,7 @@ func NewResolver(dependencies <-chan Dependency) resolver {
 	resolver.childNodes = mapset.NewSet()
 
 	// var dependency Dependency
-	for dependency := range dependencies {
+	for dependency := range dependencySource {
 		resolver.addDependency(&dependency)
 	}
 
@@ -126,25 +131,25 @@ func (r resolver) resetVisited() {
 	}
 }
 
-func (r resolver) Resolve(sequence *[]Node) bool {
+func (r resolver) Resolve() ([]Node, error) {
 	for leaf := range (*r.leaves()).Iter() {
 		r.resetVisited()
 		if !r.resolve(leaf.(*Node), 0) {
-			return false
+			return nil, NewCircularDependencyError()
 		}
 	}
 
-	*sequence = []Node{}
-	for leaf := range (*r.all()).Iter() {
-		leafNode, _ := leaf.(*Node)
-		*sequence = append(*sequence, *leafNode)
+	sequence := make([]Node, (*r.all()).Cardinality())
+	for i, node := range (*r.all()).ToSlice() {
+		sequence[i] = *node.(*Node)
 	}
-	sort.Slice(*sequence, func(i, j int) bool {
-		leftNode := (*sequence)[i]
-		rightNode := (*sequence)[j]
+
+	sort.Slice(sequence, func(i, j int) bool {
+		leftNode := (sequence)[i]
+		rightNode := (sequence)[j]
 
 		return leftNode.Level < rightNode.Level
 	})
 
-	return true
+	return sequence, nil
 }

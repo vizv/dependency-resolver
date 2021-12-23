@@ -55,22 +55,20 @@ func main() {
 
 	switch len(os.Args) {
 	case 1:
-		log.Println("Read from stdin")
+		log.Println("read from stdin")
 		dependencySource = newReaderSource(os.Stdin, splitter)
 	case 2:
 		filename := os.Args[1]
-		log.Printf("Read from '%s'\n", filename)
+		log.Printf("read from '%s'\n", filename)
 		dependencySource = newFileSource(filename, splitter)
 	default:
 		args := os.Args[1:]
-		log.Fatalln("Invalid arguments:", strings.Join(args, " "))
+		log.Fatalln("invalid arguments:", strings.Join(args, " "))
 	}
 
-	var sequence []taskorder.Node
-	if taskorder.NewResolver(dependencySource).Resolve(&sequence) {
-		fmt.Println("Done")
+	if sequence, err := taskorder.NewResolver(dependencySource).Resolve(); err == nil {
+		fmt.Println(sequence)
 	} else {
-		fmt.Println("Fail")
+		log.Fatalln("failed to resolve dependency:", err)
 	}
-	fmt.Println(sequence)
 }
