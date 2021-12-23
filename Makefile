@@ -1,5 +1,5 @@
 SOURCE := cmd/demo-task-order
-TARGET := $(notdir $(SOURCE))
+TARGET := a.out
 
 .PHONY: all clean $(TARGET)
 
