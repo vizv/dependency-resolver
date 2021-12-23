@@ -13,8 +13,7 @@ type resolver struct {
 	parentsMap  map[*Node]*mapset.Set
 	parentNodes mapset.Set
 	childNodes  mapset.Set
-	_leaves     *mapset.Set
-	_all        *mapset.Set
+	allNodes    mapset.Set
 }
 
 func (r resolver) getOrCreateNode(value interface{}) *Node {
@@ -37,6 +36,8 @@ func (r resolver) addDependency(dependency *Dependency) {
 
 	r.parentNodes.Add(parent)
 	r.childNodes.Add(child)
+	r.allNodes.Add(parent)
+	r.allNodes.Add(child)
 
 	if sp, okay := r.parentsMap[child]; okay {
 		(*sp).Add(parent)
@@ -82,6 +83,7 @@ func NewResolver(dependencySource <-chan Dependency) Resolver {
 	resolver.nodes = make(map[interface{}]*Node)
 	resolver.parentsMap = make(map[*Node]*mapset.Set)
 	resolver.parentNodes = mapset.NewSet()
+	resolver.allNodes = mapset.NewSet()
 	resolver.childNodes = mapset.NewSet()
 
 	for dependency := range dependencySource {
@@ -92,23 +94,13 @@ func NewResolver(dependencySource <-chan Dependency) Resolver {
 }
 
 func (r resolver) leaves() *mapset.Set {
-	if r._leaves == nil {
-		leaves := r.childNodes.Difference(r.parentNodes)
-		r._leaves = &leaves
-	}
-	return r._leaves
-}
+	leaves := r.childNodes.Difference(r.parentNodes)
 
-func (r resolver) all() *mapset.Set {
-	if r._all == nil {
-		all := r.childNodes.Union(r.parentNodes)
-		r._all = &all
-	}
-	return r._all
+	return &leaves
 }
 
 func (r resolver) resetVisited() {
-	for leaf := range (*r.all()).Iter() {
+	for leaf := range r.allNodes.Iter() {
 		leaf.(*Node).visited = false
 	}
 }
@@ -130,7 +122,7 @@ func (r resolver) Resolve() ([][]Node, error) {
 	for i := uint(0); i < maxLevel; i++ {
 		leveledSequence[i] = []Node{}
 	}
-	for np := range (*r.all()).Iter() {
+	for np := range r.allNodes.Iter() {
 		n := *np.(*Node)
 		leveledSequence[n.Level-1] = append(leveledSequence[n.Level-1], n)
 	}
