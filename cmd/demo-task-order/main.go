@@ -48,10 +48,11 @@ func (enumerator fileDependenciesEnumerator) NextDependency(dependency *taskorde
 
 func main() {
 	enumerator, _ := NewFileDependencyEnumerator("test/test-01.in")
-	if taskorder.NewResolver(enumerator).Resolve() {
+	var sequence []taskorder.Node
+	if taskorder.NewResolver(enumerator).Resolve(&sequence) {
 		fmt.Println("Done")
 	} else {
 		fmt.Println("Fail")
 	}
-	// taskorder.ResolveDependencies(enumerator)
+	fmt.Println(sequence)
 }
