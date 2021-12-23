@@ -6,8 +6,8 @@ import (
 	mapset "github.com/vizv/pkg/set"
 )
 
-// node of a dependency (directed) graph
-type node struct {
+// Node of a dependency (directed) graph
+type Node struct {
 	// Value of this node
 	Value interface{}
 	// Prerequisites is a set nodes this node depends on
@@ -19,6 +19,6 @@ type node struct {
 }
 
 // String function used to pretty print this node
-func (n node) String() string {
+func (n Node) String() string {
 	return fmt.Sprintf("{v=%v l=%d}", n.Value, n.Level)
 }

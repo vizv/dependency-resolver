@@ -1,29 +1,27 @@
 package dependencyresolver
 
 import (
-	"sort"
-
 	mapset "github.com/vizv/pkg/set"
 )
 
 type Resolver interface {
-	Resolve() ([]node, error)
+	Resolve() ([][]Node, error)
 }
 
 type resolver struct {
-	nodes       map[interface{}]*node
-	parentsMap  map[*node]*mapset.Set
+	nodes       map[interface{}]*Node
+	parentsMap  map[*Node]*mapset.Set
 	parentNodes mapset.Set
 	childNodes  mapset.Set
 	_leaves     *mapset.Set
 	_all        *mapset.Set
 }
 
-func (r resolver) getOrCreateNode(value interface{}) *node {
+func (r resolver) getOrCreateNode(value interface{}) *Node {
 	if np, okay := r.nodes[value]; okay {
 		return np
 	} else {
-		n := node{}
+		n := Node{}
 		n.Prerequisites = mapset.NewSet()
 		n.Value = value
 		r.nodes[value] = &n
@@ -51,36 +49,41 @@ func (r resolver) addDependency(dependency *Dependency) {
 	}
 }
 
-func (r resolver) resolve(n *node, level uint) bool {
+func (r resolver) resolve(n *Node, level uint) uint {
 	level += 1
+	maxLevel := level
 	// fmt.Printf("resolve %v[visited: %v, level: %d] at level %d\n", n.Value, n.visited, n.Level, level)
 
 	if n.visited {
-		return false
+		return 0
 	}
 	n.visited = true
 
 	if level <= n.Level {
 		n.visited = false
-		return true
+		return level
 	}
 	n.Level = level
 	if parents, okay := r.parentsMap[n]; okay {
 		for leaf := range (*parents).Iter() {
-			if !r.resolve(leaf.(*node), level) {
-				return false
+			leafLevel := r.resolve(leaf.(*Node), level)
+			if leafLevel == 0 {
+				return 0
+			}
+			if leafLevel > maxLevel {
+				maxLevel = leafLevel
 			}
 		}
 	}
 
 	n.visited = false
-	return true
+	return maxLevel
 }
 
 func NewResolver(dependencySource <-chan Dependency) Resolver {
 	resolver := resolver{}
-	resolver.nodes = make(map[interface{}]*node)
-	resolver.parentsMap = make(map[*node]*mapset.Set)
+	resolver.nodes = make(map[interface{}]*Node)
+	resolver.parentsMap = make(map[*Node]*mapset.Set)
 	resolver.parentNodes = mapset.NewSet()
 	resolver.childNodes = mapset.NewSet()
 
@@ -110,30 +113,31 @@ func (r resolver) all() *mapset.Set {
 
 func (r resolver) resetVisited() {
 	for leaf := range (*r.all()).Iter() {
-		leaf.(*node).visited = false
+		leaf.(*Node).visited = false
 	}
 }
 
-func (r resolver) Resolve() ([]node, error) {
+func (r resolver) Resolve() ([][]Node, error) {
+	maxLevel := uint(0)
 	for leaf := range (*r.leaves()).Iter() {
 		r.resetVisited()
-		if !r.resolve(leaf.(*node), 0) {
+		leafLevel := r.resolve(leaf.(*Node), 0)
+		if leafLevel == 0 {
 			return nil, NewCircularDependencyError()
+		}
+		if leafLevel > maxLevel {
+			maxLevel = leafLevel
 		}
 	}
 
-	nodeSize := (*r.all()).Size()
-	sequence := make([]node, nodeSize)
-	for i, n := range (*r.all()).ToSlice() {
-		sequence[i] = *n.(*node)
+	leveledSequence := make([][]Node, maxLevel)
+	for i := uint(0); i < maxLevel; i++ {
+		leveledSequence[i] = []Node{}
+	}
+	for np := range (*r.all()).Iter() {
+		n := *np.(*Node)
+		leveledSequence[n.Level-1] = append(leveledSequence[n.Level-1], n)
 	}
 
-	sort.Slice(sequence, func(i, j int) bool {
-		leftNode := (sequence)[i]
-		rightNode := (sequence)[j]
-
-		return leftNode.Level < rightNode.Level
-	})
-
-	return sequence, nil
+	return leveledSequence, nil
 }

@@ -66,8 +66,14 @@ func main() {
 		log.Fatalln("invalid arguments:", strings.Join(args, " "))
 	}
 
-	if sequence, err := resolver.NewResolver(dependencySource).Resolve(); err == nil {
-		fmt.Println(sequence)
+	if leveledSequence, err := resolver.NewResolver(dependencySource).Resolve(); err == nil {
+		for _, sequence := range leveledSequence {
+			values := []string{}
+			for _, node := range sequence {
+				values = append(values, fmt.Sprintf("%v", node.Value))
+			}
+			fmt.Println(strings.Join(values, ","))
+		}
 	} else {
 		log.Fatalln("failed to resolve dependency:", err)
 	}
