@@ -8,18 +8,18 @@ import (
 	"os"
 	"strings"
 
-	taskorder "github.com/vizv/pkg/task-order"
+	resolver "github.com/vizv/pkg/dependency-resolver"
 )
 
-type Splitter func(string) taskorder.Dependency
+type Splitter func(string) resolver.Dependency
 
 const DEFAULT_SEP = " "
 
 func newStringSplitter(sep string) Splitter {
-	return func(dependencyString string) taskorder.Dependency {
+	return func(dependencyString string) resolver.Dependency {
 		tokens := strings.SplitN(dependencyString, sep, 2)
 
-		return taskorder.Dependency{Parent: tokens[0], Child: tokens[1]}
+		return resolver.Dependency{Dependant: tokens[0], Prerequisite: tokens[1]}
 	}
 }
 
@@ -27,8 +27,8 @@ func defaultStringSplitter() Splitter {
 	return newStringSplitter(DEFAULT_SEP)
 }
 
-func newReaderSource(reader io.Reader, splitter Splitter) <-chan taskorder.Dependency {
-	ch := make(chan taskorder.Dependency)
+func newReaderSource(reader io.Reader, splitter Splitter) <-chan resolver.Dependency {
+	ch := make(chan resolver.Dependency)
 	scanner := bufio.NewScanner(reader)
 	go func() {
 		for scanner.Scan() {
@@ -39,7 +39,7 @@ func newReaderSource(reader io.Reader, splitter Splitter) <-chan taskorder.Depen
 	return ch
 }
 
-func newFileSource(filename string, splitter Splitter) <-chan taskorder.Dependency {
+func newFileSource(filename string, splitter Splitter) <-chan resolver.Dependency {
 	if file, err := os.Open(filename); err == nil {
 		return newReaderSource(file, splitter)
 	} else {
@@ -51,7 +51,7 @@ func newFileSource(filename string, splitter Splitter) <-chan taskorder.Dependen
 
 func main() {
 	splitter := defaultStringSplitter()
-	var dependencySource <-chan taskorder.Dependency
+	var dependencySource <-chan resolver.Dependency
 
 	switch len(os.Args) {
 	case 1:
@@ -66,7 +66,7 @@ func main() {
 		log.Fatalln("invalid arguments:", strings.Join(args, " "))
 	}
 
-	if sequence, err := taskorder.NewResolver(dependencySource).Resolve(); err == nil {
+	if sequence, err := resolver.NewResolver(dependencySource).Resolve(); err == nil {
 		fmt.Println(sequence)
 	} else {
 		log.Fatalln("failed to resolve dependency:", err)

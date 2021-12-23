@@ -1,49 +1,30 @@
-package taskorder
+package dependencyresolver
 
 import (
-	"errors"
-	"fmt"
 	"sort"
 
 	mapset "github.com/vizv/pkg/set"
 )
 
-type Dependency struct {
-	Parent interface{}
-	Child  interface{}
-}
-
-type Node struct {
-	Value    interface{}
-	Children mapset.Set
-	Level    uint
-
-	visited bool
-}
-
-func NewCircularDependencyError() error {
-	return errors.New("circular dependency detected")
-}
-
-func (n Node) String() string {
-	return fmt.Sprintf("Node{value=%v level=%d children=%d}", n.Value, n.Level, n.Children.Size())
+type Resolver interface {
+	Resolve() ([]node, error)
 }
 
 type resolver struct {
-	nodes       map[interface{}]*Node
-	parentsMap  map[*Node]*mapset.Set
+	nodes       map[interface{}]*node
+	parentsMap  map[*node]*mapset.Set
 	parentNodes mapset.Set
 	childNodes  mapset.Set
 	_leaves     *mapset.Set
 	_all        *mapset.Set
 }
 
-func (r resolver) getOrCreateNode(value interface{}) *Node {
+func (r resolver) getOrCreateNode(value interface{}) *node {
 	if np, okay := r.nodes[value]; okay {
 		return np
 	} else {
-		n := Node{}
-		n.Children = mapset.NewSet()
+		n := node{}
+		n.Prerequisites = mapset.NewSet()
 		n.Value = value
 		r.nodes[value] = &n
 		return &n
@@ -53,10 +34,10 @@ func (r resolver) getOrCreateNode(value interface{}) *Node {
 func (r resolver) addDependency(dependency *Dependency) {
 	// fmt.Println("add dependency", dependency.Parent, dependency.Child)
 
-	parent := r.getOrCreateNode(dependency.Parent)
-	child := r.getOrCreateNode(dependency.Child)
+	parent := r.getOrCreateNode(dependency.Dependant)
+	child := r.getOrCreateNode(dependency.Prerequisite)
 
-	parent.Children.Add(child)
+	parent.Prerequisites.Add(child)
 
 	r.parentNodes.Add(parent)
 	r.childNodes.Add(child)
@@ -70,7 +51,7 @@ func (r resolver) addDependency(dependency *Dependency) {
 	}
 }
 
-func (r resolver) resolve(n *Node, level uint) bool {
+func (r resolver) resolve(n *node, level uint) bool {
 	level += 1
 	// fmt.Printf("resolve %v[visited: %v, level: %d] at level %d\n", n.Value, n.visited, n.Level, level)
 
@@ -86,7 +67,7 @@ func (r resolver) resolve(n *Node, level uint) bool {
 	n.Level = level
 	if parents, okay := r.parentsMap[n]; okay {
 		for leaf := range (*parents).Iter() {
-			if !r.resolve(leaf.(*Node), level) {
+			if !r.resolve(leaf.(*node), level) {
 				return false
 			}
 		}
@@ -96,10 +77,10 @@ func (r resolver) resolve(n *Node, level uint) bool {
 	return true
 }
 
-func NewResolver(dependencySource <-chan Dependency) resolver {
+func NewResolver(dependencySource <-chan Dependency) Resolver {
 	resolver := resolver{}
-	resolver.nodes = make(map[interface{}]*Node)
-	resolver.parentsMap = make(map[*Node]*mapset.Set)
+	resolver.nodes = make(map[interface{}]*node)
+	resolver.parentsMap = make(map[*node]*mapset.Set)
 	resolver.parentNodes = mapset.NewSet()
 	resolver.childNodes = mapset.NewSet()
 
@@ -129,22 +110,22 @@ func (r resolver) all() *mapset.Set {
 
 func (r resolver) resetVisited() {
 	for leaf := range (*r.all()).Iter() {
-		leaf.(*Node).visited = false
+		leaf.(*node).visited = false
 	}
 }
 
-func (r resolver) Resolve() ([]Node, error) {
+func (r resolver) Resolve() ([]node, error) {
 	for leaf := range (*r.leaves()).Iter() {
 		r.resetVisited()
-		if !r.resolve(leaf.(*Node), 0) {
+		if !r.resolve(leaf.(*node), 0) {
 			return nil, NewCircularDependencyError()
 		}
 	}
 
 	nodeSize := (*r.all()).Size()
-	sequence := make([]Node, nodeSize)
-	for i, node := range (*r.all()).ToSlice() {
-		sequence[i] = *node.(*Node)
+	sequence := make([]node, nodeSize)
+	for i, n := range (*r.all()).ToSlice() {
+		sequence[i] = *n.(*node)
 	}
 
 	sort.Slice(sequence, func(i, j int) bool {
