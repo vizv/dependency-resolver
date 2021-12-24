@@ -11,21 +11,11 @@ import (
 	"github.com/vizv/dependency-resolver/pkg/dependency"
 )
 
-func newFileSource(filename string, readerSource ReaderSource) dependency.Source {
-	if file, err := os.Open(filename); err == nil {
-		return readerSource(file)
-	} else {
-		log.Fatalf("cannot create file source: %v", err)
-	}
-
-	return nil
-}
-
 func main() {
 	var dependencySource dependency.Source
 
 	defaultSplitter := defaultSplitParser()
-	defaultReaderSource := newParseReaderSource(defaultSplitter)
+	defaultReaderSource := newParserReaderSource(defaultSplitter)
 
 	switch len(os.Args) {
 	case 1:
