@@ -1,5 +1,5 @@
 SOURCE := cmd/demo-dependency-resolver
-TARGET := a.out
+TARGET := demo-dependency-resolver
 
 .PHONY: all clean $(TARGET)
 

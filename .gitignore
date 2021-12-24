@@ -18,4 +18,5 @@
 .vscode/
 
 # Project
-/a.out
+/demo-dependency-resolver
+*.in.gv
