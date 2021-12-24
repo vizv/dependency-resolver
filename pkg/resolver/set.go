@@ -4,34 +4,34 @@ import "fmt"
 
 type Set interface {
 	Size() int
-	Add(interface{})
-	Del(interface{})
-	Iter() <-chan interface{}
+	Add(*Node)
+	Del(*Node)
+	Iter() <-chan *Node
 	Clone() Set
 	Difference(s Set) Set
 	Union(s Set) Set
-	ToSlice() []interface{}
+	ToSlice() []*Node
 	String() string
 }
 
 type set struct {
-	mapset map[interface{}]bool
+	mapset map[*Node]bool
 }
 
 func (s set) Size() int {
 	return len(s.mapset)
 }
 
-func (s set) Add(item interface{}) {
+func (s set) Add(item *Node) {
 	s.mapset[item] = true
 }
 
-func (s set) Del(item interface{}) {
+func (s set) Del(item *Node) {
 	delete(s.mapset, item)
 }
 
-func (s set) Iter() <-chan interface{} {
-	ch := make(chan interface{})
+func (s set) Iter() <-chan *Node {
+	ch := make(chan *Node)
 	go func() {
 		for item := range s.mapset {
 			ch <- item
@@ -72,8 +72,8 @@ func (sl set) Union(sr Set) Set {
 	return set
 }
 
-func (s set) ToSlice() []interface{} {
-	slice := make([]interface{}, s.Size())
+func (s set) ToSlice() []*Node {
+	slice := make([]*Node, s.Size())
 
 	i := 0
 	for item := range s.mapset {
@@ -89,7 +89,7 @@ func (s set) String() string {
 }
 
 func NewSet() Set {
-	set := set{mapset: make(map[interface{}]bool)}
+	set := set{mapset: make(map[*Node]bool)}
 
 	return set
 }

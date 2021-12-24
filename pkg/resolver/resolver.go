@@ -5,14 +5,14 @@ type Resolver interface {
 }
 
 type resolver struct {
-	nodes       map[interface{}]*Node
+	nodes       map[string]*Node
 	parentsMap  map[*Node]*Set
 	parentNodes Set
 	childNodes  Set
 	allNodes    Set
 }
 
-func (r resolver) getOrCreateNode(value interface{}) *Node {
+func (r resolver) getOrCreateNode(value string) *Node {
 	if np, okay := r.nodes[value]; okay {
 		return np
 	} else {
@@ -60,7 +60,7 @@ func (r resolver) resolve(n *Node, level uint) uint {
 	n.Level = level
 	if parents, okay := r.parentsMap[n]; okay {
 		for leaf := range (*parents).Iter() {
-			leafLevel := r.resolve(leaf.(*Node), level)
+			leafLevel := r.resolve(leaf, level)
 			if leafLevel == 0 {
 				return 0
 			}
@@ -76,7 +76,7 @@ func (r resolver) resolve(n *Node, level uint) uint {
 
 func NewResolver(dependencySource Source) Resolver {
 	resolver := resolver{}
-	resolver.nodes = make(map[interface{}]*Node)
+	resolver.nodes = make(map[string]*Node)
 	resolver.parentsMap = make(map[*Node]*Set)
 	resolver.parentNodes = NewSet()
 	resolver.allNodes = NewSet()
@@ -95,7 +95,7 @@ func (r resolver) leaves() Set {
 
 func (r resolver) resetVisited() {
 	for leaf := range r.allNodes.Iter() {
-		leaf.(*Node).visited = false
+		leaf.visited = false
 	}
 }
 
@@ -103,7 +103,7 @@ func (r resolver) Resolve() ([][]Node, error) {
 	maxLevel := uint(0)
 	for leaf := range r.leaves().Iter() {
 		r.resetVisited()
-		leafLevel := r.resolve(leaf.(*Node), 0)
+		leafLevel := r.resolve(leaf, 0)
 		if leafLevel == 0 {
 			return nil, NewCircularDependencyError()
 		}
@@ -117,7 +117,7 @@ func (r resolver) Resolve() ([][]Node, error) {
 		leveledSequence[i] = []Node{}
 	}
 	for np := range r.allNodes.Iter() {
-		n := *np.(*Node)
+		n := *np
 		leveledSequence[n.Level-1] = append(leveledSequence[n.Level-1], n)
 	}
 
