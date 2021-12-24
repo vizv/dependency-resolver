@@ -1,0 +1,11 @@
+main DependencySource
+main Dependency
+main Resolver
+DependencySource Dependency
+Resolver DependencyGraph
+Resolver DependencySource
+Resolver DependencyNode
+Resolver DependencyNodeSet
+DependencyGraph DependencyNode
+DependencyGraph DependencyNodeSet
+DependencyGraph Dependency
