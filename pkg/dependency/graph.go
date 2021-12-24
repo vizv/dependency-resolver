@@ -5,8 +5,7 @@ type Graph struct {
 	nodes     map[string]*Node
 	lookupMap map[*Node]*NodeSet
 
-	dependants    *NodeSet
-	prerequisites *NodeSet
+	leaves *NodeSet
 }
 
 // getOrCreateNode by name
@@ -39,11 +38,6 @@ func (g *Graph) addToLookupMap(dep *Node, pre *Node) {
 		g.lookupMap[pre] = s
 	}
 	s.Add(dep)
-}
-
-// leaves are nodes without prerequisite
-func (g *Graph) leaves() *NodeSet {
-	return g.prerequisites.Exclude(g.dependants)
 }
 
 // resolveAll the nodes in a node set with resolve function
@@ -92,15 +86,17 @@ func (g *Graph) AddDependency(d *Dependency) {
 	dep, pre := g.getOrCreateNodes(d)
 	dep.Prerequisites.Add(pre)
 
-	g.dependants.Add(dep)
-	g.prerequisites.Add(pre)
+	g.leaves.Delete(dep)
+	if pre.Prerequisites.Count() == 0 {
+		g.leaves.Add(pre)
+	}
 
 	g.addToLookupMap(dep, pre)
 }
 
 // Resolve the dependency graph from leaves
 func (g *Graph) Resolve() error {
-	if err := g.resolveAll(g.leaves(), 1); err != nil {
+	if err := g.resolveAll(g.leaves, 1); err != nil {
 		return err
 	}
 
@@ -123,9 +119,8 @@ func (g *Graph) Nodes() []*Node {
 // NewGraph creates a empty dependency graph, and initialize it
 func NewGraph() *Graph {
 	return &Graph{
-		nodes:         make(map[string]*Node),
-		lookupMap:     make(map[*Node]*NodeSet),
-		dependants:    NewNodeSet(),
-		prerequisites: NewNodeSet(),
+		nodes:     make(map[string]*Node),
+		lookupMap: make(map[*Node]*NodeSet),
+		leaves:    NewNodeSet(),
 	}
 }
