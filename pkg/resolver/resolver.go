@@ -4,36 +4,6 @@ type Resolver struct {
 	graph *Graph
 }
 
-func (r *Resolver) resolve(n *Node, level uint) uint {
-	level += 1
-	maxLevel := level
-
-	if n.visited {
-		return 0
-	}
-	n.visited = true
-
-	if level <= n.Level {
-		n.visited = false
-		return level
-	}
-	n.Level = level
-	if parents, okay := r.graph.lookupMap[n]; okay {
-		for leaf := range parents.Iter() {
-			leafLevel := r.resolve(leaf, level)
-			if leafLevel == 0 {
-				return 0
-			}
-			if leafLevel > maxLevel {
-				maxLevel = leafLevel
-			}
-		}
-	}
-
-	n.visited = false
-	return maxLevel
-}
-
 func NewResolver(dependencySource Source) *Resolver {
 	graph := &Graph{
 		nodes:             make(map[string]*Node),
@@ -54,7 +24,7 @@ func (r *Resolver) Resolve() ([][]*Node, error) {
 	maxLevel := uint(0)
 	for leaf := range r.graph.leaves().Iter() {
 		r.graph.resetVisited()
-		leafLevel := r.resolve(leaf, 0)
+		leafLevel := r.graph.resolve(leaf, 0)
 		if leafLevel == 0 {
 			return nil, NewCircularDependencyError()
 		}

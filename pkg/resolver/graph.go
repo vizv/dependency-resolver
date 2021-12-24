@@ -55,3 +55,33 @@ func (r *Graph) resetVisited() {
 		leaf.visited = false
 	}
 }
+
+func (r *Graph) resolve(n *Node, level uint) uint {
+	level += 1
+	maxLevel := level
+
+	if n.visited {
+		return 0
+	}
+	n.visited = true
+
+	if level <= n.Level {
+		n.visited = false
+		return level
+	}
+	n.Level = level
+	if parents, okay := r.lookupMap[n]; okay {
+		for leaf := range parents.Iter() {
+			leafLevel := r.resolve(leaf, level)
+			if leafLevel == 0 {
+				return 0
+			}
+			if leafLevel > maxLevel {
+				maxLevel = leafLevel
+			}
+		}
+	}
+
+	n.visited = false
+	return maxLevel
+}
