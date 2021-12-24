@@ -102,10 +102,10 @@ func main() {
 	if sequence, err := resolver.NewResolver(dependencySource).Resolve(); err == nil {
 		sort.Slice(sequence, func(i, j int) bool {
 			l, r := sequence[i], sequence[j]
-			if l.Level == r.Level {
+			if l.Sequence == r.Sequence {
 				return l.Name < r.Name
 			}
-			return l.Level < r.Level
+			return l.Sequence < r.Sequence
 		})
 		for _, n := range sequence {
 			fmt.Println(n)

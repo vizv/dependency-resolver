@@ -10,15 +10,15 @@ type Node struct {
 	Name string
 	// Prerequisites is a set nodes this node depends on
 	Prerequisites *NodeSet
-	// Level means max depth of dependency chain to reach this node
-	Level uint
+	// Sequence the minimum possible batch number for processing this node
+	Sequence uint
 
 	visited bool
 }
 
 // String function used to pretty print this node
 func (n Node) String() string {
-	return fmt.Sprintf("%d:%s", n.Level, n.Name)
+	return fmt.Sprintf("%d:%s", n.Sequence, n.Name)
 }
 
 // NewNode creates a node with a name, and initialize it

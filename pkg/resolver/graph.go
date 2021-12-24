@@ -1,5 +1,6 @@
 package resolver
 
+// Graph represent a directed graph for storing dependency information
 type Graph struct {
 	nodes             map[string]*Node
 	lookupMap         map[*Node]*NodeSet
@@ -8,6 +9,8 @@ type Graph struct {
 	allNodes          *NodeSet
 }
 
+// getOrCreateNode returns a node by name,
+// the node gets created if not exist in Graph
 func (r *Graph) getOrCreateNode(name string) *Node {
 	np, exists := r.nodes[name]
 
@@ -20,6 +23,8 @@ func (r *Graph) getOrCreateNode(name string) *Node {
 	return np
 }
 
+// getOrCreateNodes returns dependant node and prerequisite node for a given Dependency,
+// these nodes get created if not exist in Graph
 func (r *Graph) getOrCreateNodes(dependency *Dependency) (*Node, *Node) {
 	dependant := r.getOrCreateNode(dependency.Dependant)
 	prerequisite := r.getOrCreateNode(dependency.Prerequisite)
@@ -27,6 +32,7 @@ func (r *Graph) getOrCreateNodes(dependency *Dependency) (*Node, *Node) {
 	return dependant, prerequisite
 }
 
+// addToLookupMap adds a dependant with a prerequisite to a map for reverse lookup
 func (r *Graph) addToLookupMap(dependant *Node, prerequisite *Node) {
 	sp, exists := r.lookupMap[prerequisite]
 	if !exists {
@@ -36,6 +42,7 @@ func (r *Graph) addToLookupMap(dependant *Node, prerequisite *Node) {
 	sp.Add(dependant)
 }
 
+// addDependency add a Dependency to a Graph, and update information stored in the Graph
 func (r *Graph) addDependency(dependency *Dependency) {
 	dependant, prerequisite := r.getOrCreateNodes(dependency)
 	dependant.Prerequisites.Add(prerequisite)
@@ -46,42 +53,38 @@ func (r *Graph) addDependency(dependency *Dependency) {
 	r.addToLookupMap(dependant, prerequisite)
 }
 
+// leaves calculates nodes without prerequisite
 func (r *Graph) leaves() *NodeSet {
 	return r.prerequisiteNodes.Difference(r.dependantNodes)
 }
 
-func (r *Graph) resetVisited() {
-	for leaf := range r.allNodes.Iter() {
-		leaf.visited = false
-	}
-}
-
-func (r *Graph) resolve(n *Node, level uint) uint {
-	level += 1
-	maxLevel := level
+// resolve the dependency
+func (r *Graph) resolve(n *Node, sequence uint) uint {
+	sequence += 1
+	maxSequence := sequence
 
 	if n.visited {
 		return 0
 	}
 	n.visited = true
 
-	if level <= n.Level {
+	if sequence <= n.Sequence {
 		n.visited = false
-		return level
+		return sequence
 	}
-	n.Level = level
+	n.Sequence = sequence
 	if parents, okay := r.lookupMap[n]; okay {
 		for leaf := range parents.Iter() {
-			leafLevel := r.resolve(leaf, level)
-			if leafLevel == 0 {
+			leafSequence := r.resolve(leaf, sequence)
+			if leafSequence == 0 {
 				return 0
 			}
-			if leafLevel > maxLevel {
-				maxLevel = leafLevel
+			if leafSequence > maxSequence {
+				maxSequence = leafSequence
 			}
 		}
 	}
 
 	n.visited = false
-	return maxLevel
+	return maxSequence
 }
