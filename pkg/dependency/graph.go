@@ -91,6 +91,10 @@ func (g *Graph) AddDependency(d *Dependency) {
 
 // Resolve the dependency graph from leaves
 func (g *Graph) Resolve() error {
+	if g.leaves.Count() == 0 && len(g.nodes) != 0 {
+		return NewCircularDependencyError()
+	}
+
 	if err := g.resolveAll(g.leaves, 1); err != nil {
 		return err
 	}
