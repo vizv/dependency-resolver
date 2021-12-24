@@ -1,7 +1,5 @@
 package dependency
 
-import "fmt"
-
 // NodeSet represents a set of dependency nodes
 type NodeSet struct {
 	mapset map[*Node]bool
@@ -13,21 +11,21 @@ func (s *NodeSet) Count() int {
 }
 
 // Add a node to the set
-func (s *NodeSet) Add(item *Node) {
-	s.mapset[item] = true
+func (s *NodeSet) Add(n *Node) {
+	s.mapset[n] = true
 }
 
 // Delete a node from the set
-func (s *NodeSet) Delete(item *Node) {
-	delete(s.mapset, item)
+func (s *NodeSet) Delete(n *Node) {
+	delete(s.mapset, n)
 }
 
 // Iterator used to iterate through the set
 func (s *NodeSet) Iterator() <-chan *Node {
 	ch := make(chan *Node)
 	go func() {
-		for item := range s.mapset {
-			ch <- item
+		for n := range s.mapset {
+			ch <- n
 		}
 		close(ch)
 	}()
@@ -39,8 +37,8 @@ func (s *NodeSet) Iterator() <-chan *Node {
 func (s *NodeSet) Clone() *NodeSet {
 	set := NewNodeSet()
 
-	for item := range s.Iterator() {
-		set.Add(item)
+	for n := range s.Iterator() {
+		set.Add(n)
 	}
 
 	return set
@@ -51,41 +49,11 @@ func (s *NodeSet) Clone() *NodeSet {
 func (sl *NodeSet) Exclude(sr *NodeSet) *NodeSet {
 	set := sl.Clone()
 
-	for item := range sr.Iterator() {
-		set.Delete(item)
+	for n := range sr.Iterator() {
+		set.Delete(n)
 	}
 
 	return set
-}
-
-// Union nodes with another set
-// returns a new set
-func (sl *NodeSet) Union(sr *NodeSet) *NodeSet {
-	set := sl.Clone()
-
-	for item := range sr.Iterator() {
-		set.Add(item)
-	}
-
-	return set
-}
-
-// ToSlice function converts current set to slice
-func (s *NodeSet) ToSlice() []*Node {
-	slice := make([]*Node, s.Count())
-
-	i := 0
-	for item := range s.mapset {
-		slice[i] = item
-		i++
-	}
-
-	return slice
-}
-
-// String function used to pretty print this set
-func (s *NodeSet) String() string {
-	return fmt.Sprintf("%v", s.ToSlice())
 }
 
 // NewNodeSet creates an empty set, and initialize it

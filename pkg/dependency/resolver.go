@@ -1,11 +1,11 @@
 package dependency
 
-// Resolver represents a dependency dependency that
+// Resolver represents a dependency resolver
 type Resolver struct {
 	graph *Graph
 }
 
-// Resolve the dependency graph and update sequence for all nodes in it
+// Resolve the dependency graph and returns all the nodes
 func (r *Resolver) Resolve() ([]*Node, error) {
 	if err := r.graph.Resolve(); err != nil {
 		return nil, err
@@ -14,10 +14,10 @@ func (r *Resolver) Resolve() ([]*Node, error) {
 	return r.graph.Nodes(), nil
 }
 
-// NewResolver creates a new dependency with information provided from a source
-func NewResolver(dependencySource Source) *Resolver {
+// NewResolver creates a new resolver with information provided from a source
+func NewResolver(src Source) *Resolver {
 	graph := NewGraph()
-	for dependency := range dependencySource {
+	for dependency := range src {
 		graph.AddDependency(&dependency)
 	}
 

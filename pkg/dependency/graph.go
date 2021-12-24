@@ -2,13 +2,11 @@ package dependency
 
 // Graph represent a directed graph for storing dependency information
 type Graph struct {
-	nodes map[string]*Node
-
+	nodes     map[string]*Node
 	lookupMap map[*Node]*NodeSet
 
-	dependantNodes    *NodeSet
-	prerequisiteNodes *NodeSet
-	allNodes          *NodeSet
+	dependants    *NodeSet
+	prerequisites *NodeSet
 }
 
 // getOrCreateNode by name
@@ -19,7 +17,6 @@ func (g *Graph) getOrCreateNode(name string) *Node {
 	if !exists {
 		n = NewNode(name)
 		g.nodes[name] = n
-		g.allNodes.Add(n)
 	}
 
 	return n
@@ -46,7 +43,7 @@ func (g *Graph) addToLookupMap(dep *Node, pre *Node) {
 
 // leaves are nodes without prerequisite
 func (g *Graph) leaves() *NodeSet {
-	return g.prerequisiteNodes.Exclude(g.dependantNodes)
+	return g.prerequisites.Exclude(g.dependants)
 }
 
 // resolveAll the nodes in a node set with resolve function
@@ -95,8 +92,8 @@ func (g *Graph) AddDependency(d *Dependency) {
 	dep, pre := g.getOrCreateNodes(d)
 	dep.Prerequisites.Add(pre)
 
-	g.dependantNodes.Add(dep)
-	g.prerequisiteNodes.Add(pre)
+	g.dependants.Add(dep)
+	g.prerequisites.Add(pre)
 
 	g.addToLookupMap(dep, pre)
 }
@@ -112,16 +109,23 @@ func (g *Graph) Resolve() error {
 
 // Nodes of this graph
 func (g *Graph) Nodes() []*Node {
-	return g.allNodes.ToSlice()
+	slice := make([]*Node, len(g.nodes))
+
+	i := 0
+	for _, n := range g.nodes {
+		slice[i] = n
+		i++
+	}
+
+	return slice
 }
 
 // NewGraph creates a empty dependency graph, and initialize it
 func NewGraph() *Graph {
 	return &Graph{
-		nodes:             make(map[string]*Node),
-		lookupMap:         make(map[*Node]*NodeSet),
-		dependantNodes:    NewNodeSet(),
-		allNodes:          NewNodeSet(),
-		prerequisiteNodes: NewNodeSet(),
+		nodes:         make(map[string]*Node),
+		lookupMap:     make(map[*Node]*NodeSet),
+		dependants:    NewNodeSet(),
+		prerequisites: NewNodeSet(),
 	}
 }
