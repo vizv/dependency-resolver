@@ -69,12 +69,13 @@ func (r *Resolver) resolve(n *Node, level uint) uint {
 }
 
 func NewResolver(dependencySource Source) *Resolver {
-	resolver := &Resolver{}
-	resolver.nodes = make(map[string]*Node)
-	resolver.lookupMap = make(map[*Node]*NodeSet)
-	resolver.dependantNodes = NewSet()
-	resolver.allNodes = NewSet()
-	resolver.prerequisiteNodes = NewSet()
+	resolver := &Resolver{
+		nodes:             make(map[string]*Node),
+		lookupMap:         make(map[*Node]*NodeSet),
+		dependantNodes:    NewSet(),
+		allNodes:          NewSet(),
+		prerequisiteNodes: NewSet(),
+	}
 
 	for dependency := range dependencySource {
 		resolver.addDependency(&dependency)
