@@ -12,14 +12,14 @@ import (
 	"strings"
 
 	"github.com/goccy/go-graphviz"
-	"github.com/vizv/dependency-resolver/pkg/resolver"
+	"github.com/vizv/dependency-resolver/pkg/dependency"
 )
 
-type ReaderSource func(reader io.Reader) resolver.DependencySource
+type ReaderSource func(reader io.Reader) dependency.Source
 
 func newSplitReaderSource(splitter Splitter) ReaderSource {
-	return func(reader io.Reader) resolver.DependencySource {
-		ch := make(chan resolver.Dependency)
+	return func(reader io.Reader) dependency.Source {
+		ch := make(chan dependency.Dependency)
 		scanner := bufio.NewScanner(reader)
 		go func() {
 			for scanner.Scan() {
@@ -32,8 +32,8 @@ func newSplitReaderSource(splitter Splitter) ReaderSource {
 }
 
 func newGraphvizReaderSource() ReaderSource {
-	return func(reader io.Reader) resolver.DependencySource {
-		ch := make(chan resolver.Dependency)
+	return func(reader io.Reader) dependency.Source {
+		ch := make(chan dependency.Dependency)
 		go func() {
 			buf := new(bytes.Buffer)
 			if _, err := buf.ReadFrom(reader); err != nil {
@@ -48,7 +48,7 @@ func newGraphvizReaderSource() ReaderSource {
 					edge := graph.FirstOut(node)
 					for edge != nil {
 						prerequisite := edge.Node().Name()
-						ch <- resolver.Dependency{Dependant: dependant, Prerequisite: prerequisite}
+						ch <- dependency.Dependency{Dependant: dependant, Prerequisite: prerequisite}
 						edge = graph.NextOut(edge)
 					}
 					node = graph.NextNode(node)
@@ -60,7 +60,7 @@ func newGraphvizReaderSource() ReaderSource {
 	}
 }
 
-func newFileSource(filename string, readerSource ReaderSource) resolver.DependencySource {
+func newFileSource(filename string, readerSource ReaderSource) dependency.Source {
 	if file, err := os.Open(filename); err == nil {
 		return readerSource(file)
 	} else {
@@ -71,7 +71,7 @@ func newFileSource(filename string, readerSource ReaderSource) resolver.Dependen
 }
 
 func main() {
-	var dependencySource resolver.DependencySource
+	var dependencySource dependency.Source
 
 	defaultSplitter := defaultStringSplitter()
 	defaultReaderSource := newSplitReaderSource(defaultSplitter)
@@ -99,7 +99,7 @@ func main() {
 		log.Fatalln("invalid arguments:", strings.Join(args, " "))
 	}
 
-	if sequence, err := resolver.NewDependencyResolver(dependencySource).Resolve(); err == nil {
+	if sequence, err := dependency.NewResolver(dependencySource).Resolve(); err == nil {
 		sort.Slice(sequence, func(i, j int) bool {
 			l, r := sequence[i], sequence[j]
 			if l.Sequence == r.Sequence {
