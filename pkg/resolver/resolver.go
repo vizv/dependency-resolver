@@ -1,50 +1,44 @@
 package resolver
 
-type Resolver interface {
-	Resolve() ([][]Node, error)
+type Resolver struct {
+	nodes             map[string]*Node
+	lookupMap         map[*Node]*NodeSet
+	dependantNodes    *NodeSet
+	prerequisiteNodes *NodeSet
+	allNodes          *NodeSet
 }
 
-type resolver struct {
-	nodes       map[string]*Node
-	parentsMap  map[*Node]*Set
-	parentNodes Set
-	childNodes  Set
-	allNodes    Set
-}
+func (r *Resolver) getOrCreateNode(name string) *Node {
+	np, exists := r.nodes[name]
 
-func (r resolver) getOrCreateNode(value string) *Node {
-	if np, okay := r.nodes[value]; okay {
-		return np
-	} else {
-		n := Node{}
-		n.Prerequisites = NewSet()
-		n.Value = value
-		r.nodes[value] = &n
-		return &n
+	if !exists {
+		np = NewNode(name)
+		r.nodes[name] = np
 	}
+
+	return np
 }
 
-func (r resolver) addDependency(dependency *Dependency) {
+func (r *Resolver) addDependency(dependency *Dependency) {
 	parent := r.getOrCreateNode(dependency.Dependant)
 	child := r.getOrCreateNode(dependency.Prerequisite)
 
 	parent.Prerequisites.Add(child)
 
-	r.parentNodes.Add(parent)
-	r.childNodes.Add(child)
+	r.dependantNodes.Add(parent)
+	r.prerequisiteNodes.Add(child)
 	r.allNodes.Add(parent)
 	r.allNodes.Add(child)
 
-	if sp, okay := r.parentsMap[child]; okay {
-		(*sp).Add(parent)
-	} else {
-		s := NewSet()
-		r.parentsMap[child] = &s
-		s.Add(parent)
+	sp, exists := r.lookupMap[child]
+	if !exists {
+		sp = NewSet()
+		r.lookupMap[child] = sp
 	}
+	(*sp).Add(parent)
 }
 
-func (r resolver) resolve(n *Node, level uint) uint {
+func (r *Resolver) resolve(n *Node, level uint) uint {
 	level += 1
 	maxLevel := level
 
@@ -58,7 +52,7 @@ func (r resolver) resolve(n *Node, level uint) uint {
 		return level
 	}
 	n.Level = level
-	if parents, okay := r.parentsMap[n]; okay {
+	if parents, okay := r.lookupMap[n]; okay {
 		for leaf := range (*parents).Iter() {
 			leafLevel := r.resolve(leaf, level)
 			if leafLevel == 0 {
@@ -74,13 +68,13 @@ func (r resolver) resolve(n *Node, level uint) uint {
 	return maxLevel
 }
 
-func NewResolver(dependencySource Source) Resolver {
-	resolver := resolver{}
+func NewResolver(dependencySource Source) *Resolver {
+	resolver := &Resolver{}
 	resolver.nodes = make(map[string]*Node)
-	resolver.parentsMap = make(map[*Node]*Set)
-	resolver.parentNodes = NewSet()
+	resolver.lookupMap = make(map[*Node]*NodeSet)
+	resolver.dependantNodes = NewSet()
 	resolver.allNodes = NewSet()
-	resolver.childNodes = NewSet()
+	resolver.prerequisiteNodes = NewSet()
 
 	for dependency := range dependencySource {
 		resolver.addDependency(&dependency)
@@ -89,17 +83,17 @@ func NewResolver(dependencySource Source) Resolver {
 	return resolver
 }
 
-func (r resolver) leaves() Set {
-	return r.childNodes.Difference(r.parentNodes)
+func (r *Resolver) leaves() *NodeSet {
+	return r.prerequisiteNodes.Difference(r.dependantNodes)
 }
 
-func (r resolver) resetVisited() {
+func (r *Resolver) resetVisited() {
 	for leaf := range r.allNodes.Iter() {
 		leaf.visited = false
 	}
 }
 
-func (r resolver) Resolve() ([][]Node, error) {
+func (r *Resolver) Resolve() ([][]Node, error) {
 	maxLevel := uint(0)
 	for leaf := range r.leaves().Iter() {
 		r.resetVisited()

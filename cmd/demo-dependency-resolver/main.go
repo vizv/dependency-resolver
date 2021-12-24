@@ -101,12 +101,12 @@ func main() {
 
 	if leveledSequence, err := resolver.NewResolver(dependencySource).Resolve(); err == nil {
 		for _, sequence := range leveledSequence {
-			values := []string{}
+			names := []string{}
 			for _, node := range sequence {
-				values = append(values, fmt.Sprintf("%v", node.Value))
+				names = append(names, node.Name)
 			}
-			sort.Strings(values)
-			fmt.Println(strings.Join(values, " "))
+			sort.Strings(names)
+			fmt.Println(strings.Join(names, " "))
 		}
 	} else {
 		log.Fatalln("failed to resolve dependency:", err)

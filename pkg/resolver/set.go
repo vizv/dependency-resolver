@@ -2,35 +2,23 @@ package resolver
 
 import "fmt"
 
-type Set interface {
-	Size() int
-	Add(*Node)
-	Del(*Node)
-	Iter() <-chan *Node
-	Clone() Set
-	Difference(s Set) Set
-	Union(s Set) Set
-	ToSlice() []*Node
-	String() string
-}
-
-type set struct {
+type NodeSet struct {
 	mapset map[*Node]bool
 }
 
-func (s set) Size() int {
+func (s *NodeSet) Size() int {
 	return len(s.mapset)
 }
 
-func (s set) Add(item *Node) {
+func (s *NodeSet) Add(item *Node) {
 	s.mapset[item] = true
 }
 
-func (s set) Del(item *Node) {
+func (s *NodeSet) Del(item *Node) {
 	delete(s.mapset, item)
 }
 
-func (s set) Iter() <-chan *Node {
+func (s *NodeSet) Iter() <-chan *Node {
 	ch := make(chan *Node)
 	go func() {
 		for item := range s.mapset {
@@ -42,7 +30,7 @@ func (s set) Iter() <-chan *Node {
 	return ch
 }
 
-func (s set) Clone() Set {
+func (s *NodeSet) Clone() *NodeSet {
 	set := NewSet()
 
 	for item := range s.Iter() {
@@ -52,7 +40,7 @@ func (s set) Clone() Set {
 	return set
 }
 
-func (sl set) Difference(sr Set) Set {
+func (sl *NodeSet) Difference(sr *NodeSet) *NodeSet {
 	set := sl.Clone()
 
 	for item := range sr.Iter() {
@@ -62,7 +50,7 @@ func (sl set) Difference(sr Set) Set {
 	return set
 }
 
-func (sl set) Union(sr Set) Set {
+func (sl *NodeSet) Union(sr *NodeSet) *NodeSet {
 	set := sl.Clone()
 
 	for item := range sr.Iter() {
@@ -72,7 +60,7 @@ func (sl set) Union(sr Set) Set {
 	return set
 }
 
-func (s set) ToSlice() []*Node {
+func (s *NodeSet) ToSlice() []*Node {
 	slice := make([]*Node, s.Size())
 
 	i := 0
@@ -84,12 +72,10 @@ func (s set) ToSlice() []*Node {
 	return slice
 }
 
-func (s set) String() string {
+func (s *NodeSet) String() string {
 	return fmt.Sprintf("%v", s.ToSlice())
 }
 
-func NewSet() Set {
-	set := set{mapset: make(map[*Node]bool)}
-
-	return set
+func NewSet() *NodeSet {
+	return &NodeSet{mapset: make(map[*Node]bool)}
 }
