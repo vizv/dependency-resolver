@@ -19,23 +19,30 @@ func (r *Resolver) getOrCreateNode(name string) *Node {
 	return np
 }
 
-func (r *Resolver) addDependency(dependency *Dependency) {
+func (r *Resolver) getOrCreateNodes(dependency *Dependency) (*Node, *Node) {
 	dependant := r.getOrCreateNode(dependency.Dependant)
 	prerequisite := r.getOrCreateNode(dependency.Prerequisite)
 
+	return dependant, prerequisite
+}
+
+func (r *Resolver) addToLookupMap(dependant *Node, prerequisite *Node) {
+	sp, exists := r.lookupMap[prerequisite]
+	if !exists {
+		sp = NewSet()
+		r.lookupMap[prerequisite] = sp
+	}
+	sp.Add(dependant)
+}
+
+func (r *Resolver) addDependency(dependency *Dependency) {
+	dependant, prerequisite := r.getOrCreateNodes(dependency)
 	dependant.Prerequisites.Add(prerequisite)
 
 	r.dependantNodes.Add(dependant)
 	r.prerequisiteNodes.Add(prerequisite)
 	r.allNodes.Add(dependant)
 	r.allNodes.Add(prerequisite)
-
-	sp, exists := r.lookupMap[prerequisite]
-	if !exists {
-		sp = NewSet()
-		r.lookupMap[prerequisite] = sp
-	}
-	(*sp).Add(dependant)
 }
 
 func (r *Resolver) resolve(n *Node, level uint) uint {
@@ -53,7 +60,7 @@ func (r *Resolver) resolve(n *Node, level uint) uint {
 	}
 	n.Level = level
 	if parents, okay := r.lookupMap[n]; okay {
-		for leaf := range (*parents).Iter() {
+		for leaf := range parents.Iter() {
 			leafLevel := r.resolve(leaf, level)
 			if leafLevel == 0 {
 				return 0
