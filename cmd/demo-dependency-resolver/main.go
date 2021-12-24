@@ -25,7 +25,7 @@ func getDependencySource() dependency.Source {
 		ext := filepath.Ext(filename)
 		var readerSource ReaderSource
 		switch ext {
-		case ".txt":
+		case ".in":
 			readerSource = defaultReaderSource
 		case ".gv":
 			readerSource = newGraphvizReaderSource()
