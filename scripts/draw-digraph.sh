@@ -8,7 +8,7 @@ PNG="$(mktemp)"
 
 cat >"$DOT" <<EOF
 digraph {
-$(sed 's/^\([^ ]*\) \(.*\)/\1 -> \2/g' "$TEST_INPUT")
+$(sed 's/^\([^ ]*\) \(.*\)/"\1" -> "\2"/g' "$TEST_INPUT")
 }
 EOF
 

@@ -1,4 +1,4 @@
-package dependencyresolver
+package resolver
 
 // Dependency represents a relationship between a Dependant and a Prerequisite,
 // the Dependant depends on the Prerequisite

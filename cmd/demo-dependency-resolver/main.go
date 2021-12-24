@@ -9,7 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	resolver "github.com/vizv/dependency-resolver/pkg/dependency-resolver"
+	// "github.com/goccy/go-graphviz"
+	resolver "github.com/vizv/dependency-resolver/pkg/resolver"
 )
 
 type Splitter func(string) resolver.Dependency

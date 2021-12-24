@@ -1,4 +1,4 @@
-package dependencyresolver
+package resolver
 
 import (
 	mapset "github.com/vizv/dependency-resolver/pkg/set"

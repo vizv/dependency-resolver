@@ -1,4 +1,4 @@
-package dependencyresolver
+package resolver
 
 import (
 	"fmt"
