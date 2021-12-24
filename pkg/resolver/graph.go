@@ -58,33 +58,35 @@ func (r *Graph) leaves() *NodeSet {
 	return r.prerequisiteNodes.Difference(r.dependantNodes)
 }
 
+func (r *Graph) resolveAll(nodeSet *NodeSet, sequence uint) bool {
+	for leaf := range nodeSet.Iter() {
+		if !r.resolve(leaf, sequence) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // resolve the dependency
-func (r *Graph) resolve(n *Node, sequence uint) uint {
-	sequence += 1
-	maxSequence := sequence
-
-	if n.visited {
-		return 0
+func (r *Graph) resolve(node *Node, sequence uint) bool {
+	if node.visited {
+		return false
 	}
-	n.visited = true
+	node.visited = true
+	defer func() { node.visited = false }()
 
-	if sequence <= n.Sequence {
-		n.visited = false
-		return sequence
+	if sequence <= node.Sequence {
+		return true
 	}
-	n.Sequence = sequence
-	if parents, okay := r.lookupMap[n]; okay {
+	node.Sequence = sequence
+	if parents, okay := r.lookupMap[node]; okay {
 		for leaf := range parents.Iter() {
-			leafSequence := r.resolve(leaf, sequence)
-			if leafSequence == 0 {
-				return 0
-			}
-			if leafSequence > maxSequence {
-				maxSequence = leafSequence
+			if !r.resolve(leaf, sequence+1) {
+				return false
 			}
 		}
 	}
 
-	n.visited = false
-	return maxSequence
+	return true
 }

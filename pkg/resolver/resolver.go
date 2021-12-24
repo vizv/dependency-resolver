@@ -21,16 +21,16 @@ func NewResolver(dependencySource Source) *Resolver {
 }
 
 func (r *Resolver) Resolve() ([]*Node, error) {
-	maxLevel := uint(0)
-	for leaf := range r.graph.leaves().Iter() {
-		leafSequence := r.graph.resolve(leaf, 0)
-		if leafSequence == 0 {
-			return nil, NewCircularDependencyError()
-		}
-		if leafSequence > maxLevel {
-			maxLevel = leafSequence
-		}
-	}
+	r.graph.resolveAll(r.graph.leaves(), 1)
+	// for leaf := range r.graph.leaves().Iter() {
+	// 	leafSequence := r.graph.resolve(leaf, 0)
+	// 	if leafSequence == 0 {
+	// 		return nil, NewCircularDependencyError()
+	// 	}
+	// 	if leafSequence > maxLevel {
+	// 		maxLevel = leafSequence
+	// 	}
+	// }
 
 	sequence := r.graph.allNodes.ToSlice()
 
