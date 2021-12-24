@@ -69,11 +69,21 @@ func (g *Graph) resolveAll(s *NodeSet, seq uint) error {
 // AddDependency to a graph
 // also update information stored in the graph
 func (g *Graph) AddDependency(d *Dependency) {
-	dep, pre := g.getOrCreateNodes(d)
-	dep.Prerequisites.Add(pre)
-	pre.Dependants.Add(dep)
+	// ignore empty dependency
+	if d == nil {
+		return
+	}
 
-	g.leaves.Delete(dep)
+	dep, pre := g.getOrCreateNodes(d)
+
+	// skip updating dependency for single node
+	if dep != pre {
+		dep.Prerequisites.Add(pre)
+		pre.Dependants.Add(dep)
+
+		g.leaves.Delete(dep)
+	}
+
 	if pre.Prerequisites.Count() == 0 {
 		g.leaves.Add(pre)
 	}

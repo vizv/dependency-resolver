@@ -17,7 +17,15 @@ func newSplitParser(sep string) Parser {
 	return func(dependencyString string) *dependency.Dependency {
 		tokens := strings.SplitN(dependencyString, sep, 2)
 
-		return dependency.NewDependency(tokens[0], tokens[1])
+		switch len(tokens) {
+		case 1:
+			// single node
+			return dependency.NewDependency(tokens[0], tokens[0])
+		case 2:
+			return dependency.NewDependency(tokens[0], tokens[1])
+		default:
+			return nil
+		}
 	}
 }
 
