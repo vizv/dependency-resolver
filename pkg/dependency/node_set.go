@@ -2,7 +2,7 @@ package dependency
 
 import "fmt"
 
-// NodeSet is a set for dependency nodes
+// NodeSet represents a set of dependency nodes
 type NodeSet struct {
 	mapset map[*Node]bool
 }

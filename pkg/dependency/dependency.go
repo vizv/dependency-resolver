@@ -1,7 +1,7 @@
 package dependency
 
-// Dependency represents a relationship between a Dependant and a Prerequisite,
-// the Dependant depends on the Prerequisite
+// Dependency represents a relationship between a dependant and a prerequisite
+// the Dependant depends on the prerequisite
 type Dependency struct {
 	Dependant    string
 	Prerequisite string

@@ -2,8 +2,10 @@ package dependency
 
 // Graph represent a directed graph for storing dependency information
 type Graph struct {
-	nodes             map[string]*Node
-	lookupMap         map[*Node]*NodeSet
+	nodes map[string]*Node
+
+	lookupMap map[*Node]*NodeSet
+
 	dependantNodes    *NodeSet
 	prerequisiteNodes *NodeSet
 	allNodes          *NodeSet
@@ -40,18 +42,6 @@ func (g *Graph) addToLookupMap(dep *Node, pre *Node) {
 		g.lookupMap[pre] = s
 	}
 	s.Add(dep)
-}
-
-// addDependency to a graph
-// also update information stored in the graph
-func (g *Graph) addDependency(d *Dependency) {
-	dep, pre := g.getOrCreateNodes(d)
-	dep.Prerequisites.Add(pre)
-
-	g.dependantNodes.Add(dep)
-	g.prerequisiteNodes.Add(pre)
-
-	g.addToLookupMap(dep, pre)
 }
 
 // leaves are nodes without prerequisite
@@ -97,6 +87,32 @@ func (g *Graph) resolve(n *Node, seq uint) error {
 	}
 
 	return nil
+}
+
+// AddDependency to a graph
+// also update information stored in the graph
+func (g *Graph) AddDependency(d *Dependency) {
+	dep, pre := g.getOrCreateNodes(d)
+	dep.Prerequisites.Add(pre)
+
+	g.dependantNodes.Add(dep)
+	g.prerequisiteNodes.Add(pre)
+
+	g.addToLookupMap(dep, pre)
+}
+
+// Resolve the dependency graph from leaves
+func (g *Graph) Resolve() error {
+	if err := g.resolveAll(g.leaves(), 1); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Nodes of this graph
+func (g *Graph) Nodes() []*Node {
+	return g.allNodes.ToSlice()
 }
 
 // NewGraph creates a empty dependency graph, and initialize it

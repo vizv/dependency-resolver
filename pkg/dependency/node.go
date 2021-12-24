@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-// Node of a dependency (directed) graph
+// Node of a dependency graph
 type Node struct {
 	// Name of this node
 	Name string

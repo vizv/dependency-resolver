@@ -7,18 +7,18 @@ type Resolver struct {
 
 // Resolve the dependency graph and update sequence for all nodes in it
 func (r *Resolver) Resolve() ([]*Node, error) {
-	if err := r.graph.resolveAll(r.graph.leaves(), 1); err != nil {
+	if err := r.graph.Resolve(); err != nil {
 		return nil, err
 	}
 
-	return r.graph.allNodes.ToSlice(), nil
+	return r.graph.Nodes(), nil
 }
 
 // NewResolver creates a new dependency with information provided from a source
 func NewResolver(dependencySource Source) *Resolver {
 	graph := NewGraph()
 	for dependency := range dependencySource {
-		graph.addDependency(&dependency)
+		graph.AddDependency(&dependency)
 	}
 
 	return &Resolver{graph}
