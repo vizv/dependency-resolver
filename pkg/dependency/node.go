@@ -8,6 +8,8 @@ import (
 type Node struct {
 	// Name of this node
 	Name string
+	// Dependants is a set nodes depend on this node
+	Dependants *NodeSet
 	// Prerequisites is a set nodes this node depends on
 	Prerequisites *NodeSet
 	// Sequence the minimum possible batch number for processing this node
@@ -23,5 +25,5 @@ func (n Node) String() string {
 
 // NewNode creates a node with a name, and initialize it
 func NewNode(name string) *Node {
-	return &Node{Name: name, Prerequisites: NewNodeSet()}
+	return &Node{Name: name, Prerequisites: NewNodeSet(), Dependants: NewNodeSet()}
 }

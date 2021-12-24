@@ -2,9 +2,7 @@ package dependency
 
 // Graph represent a directed graph for storing dependency information
 type Graph struct {
-	nodes     map[string]*Node
-	lookupMap map[*Node]*NodeSet
-
+	nodes  map[string]*Node
 	leaves *NodeSet
 }
 
@@ -30,27 +28,6 @@ func (g *Graph) getOrCreateNodes(d *Dependency) (*Node, *Node) {
 	return dependant, prerequisite
 }
 
-// addToLookupMap of a dependant with a prerequisite for reverse lookup
-func (g *Graph) addToLookupMap(dep *Node, pre *Node) {
-	s, exists := g.lookupMap[pre]
-	if !exists {
-		s = NewNodeSet()
-		g.lookupMap[pre] = s
-	}
-	s.Add(dep)
-}
-
-// resolveAll the nodes in a node set with resolve function
-func (g *Graph) resolveAll(s *NodeSet, seq uint) error {
-	for leaf := range s.Iterator() {
-		if err := g.resolve(leaf, seq); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // resolve the dependency graph recursively
 // update this node and all dependants only if current sequence is larger
 // returns error if the dependency graph is not resolvable
@@ -71,8 +48,17 @@ func (g *Graph) resolve(n *Node, seq uint) error {
 
 	// update sequence number and then resolve all dependants as next sequence
 	n.Sequence = seq
-	if deps, exists := g.lookupMap[n]; exists {
-		if err := g.resolveAll(deps, seq+1); err != nil {
+	if err := g.resolveAll(n.Dependants, seq+1); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// resolveAll the nodes in a node set with resolve function
+func (g *Graph) resolveAll(s *NodeSet, seq uint) error {
+	for leaf := range s.Iterator() {
+		if err := g.resolve(leaf, seq); err != nil {
 			return err
 		}
 	}
@@ -85,13 +71,12 @@ func (g *Graph) resolve(n *Node, seq uint) error {
 func (g *Graph) AddDependency(d *Dependency) {
 	dep, pre := g.getOrCreateNodes(d)
 	dep.Prerequisites.Add(pre)
+	pre.Dependants.Add(dep)
 
 	g.leaves.Delete(dep)
 	if pre.Prerequisites.Count() == 0 {
 		g.leaves.Add(pre)
 	}
-
-	g.addToLookupMap(dep, pre)
 }
 
 // Resolve the dependency graph from leaves
@@ -119,8 +104,7 @@ func (g *Graph) Nodes() []*Node {
 // NewGraph creates a empty dependency graph, and initialize it
 func NewGraph() *Graph {
 	return &Graph{
-		nodes:     make(map[string]*Node),
-		lookupMap: make(map[*Node]*NodeSet),
-		leaves:    NewNodeSet(),
+		nodes:  make(map[string]*Node),
+		leaves: NewNodeSet(),
 	}
 }
