@@ -15,10 +15,12 @@ type ReaderSource func(io.Reader) dependency.Source
 func newReaderSource(readerFn Reader) ReaderSource {
 	return func(r io.Reader) dependency.Source {
 		ch := make(chan *dependency.Dependency)
+
 		go func() {
 			readerFn(r, ch)
 			close(ch)
 		}()
+
 		return ch
 	}
 }

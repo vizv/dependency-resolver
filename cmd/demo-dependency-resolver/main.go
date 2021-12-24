@@ -11,17 +11,16 @@ import (
 	"github.com/vizv/dependency-resolver/pkg/dependency"
 )
 
-func main() {
-	var dependencySource dependency.Source
-
-	defaultSplitter := defaultSplitParser()
-	defaultReaderSource := newParserReaderSource(defaultSplitter)
+// getDependencySource from commandline arguments
+func getDependencySource() dependency.Source {
+	defaultParser := defaultSplitParser()
+	defaultReaderSource := newParserReaderSource(defaultParser)
 
 	switch len(os.Args) {
-	case 1:
+	case 1: // no argument
 		log.Println("read from stdin")
-		dependencySource = defaultReaderSource(os.Stdin)
-	case 2:
+		return defaultReaderSource(os.Stdin)
+	case 2: // 1 file argument
 		filename := os.Args[1]
 		ext := filepath.Ext(filename)
 		var readerSource ReaderSource
@@ -34,24 +33,41 @@ func main() {
 			log.Fatalf("unsupported file: %s", filename)
 		}
 		log.Printf("read from '%s'\n", filename)
-		dependencySource = newFileSource(filename, readerSource)
+		return newFileSource(filename, readerSource)
 	default:
 		args := os.Args[1:]
 		log.Fatalln("invalid arguments:", strings.Join(args, " "))
 	}
 
-	if sequence, err := dependency.NewResolver(dependencySource).Resolve(); err == nil {
-		sort.Slice(sequence, func(i, j int) bool {
-			l, r := sequence[i], sequence[j]
-			if l.Sequence == r.Sequence {
-				return l.Name < r.Name
-			}
-			return l.Sequence < r.Sequence
-		})
-		for _, n := range sequence {
+	return nil
+}
+
+// sortNodes by sequence number
+// for the same sequence number, sort by name
+// returns a new slice
+func sortNodes(nodes []*dependency.Node) []*dependency.Node {
+	sorted := make([]*dependency.Node, len(nodes))
+	copy(sorted, nodes)
+
+	sort.Slice(sorted, func(i, j int) bool {
+		l, r := sorted[i], sorted[j]
+		if l.Sequence == r.Sequence {
+			return l.Name < r.Name
+		}
+		return l.Sequence < r.Sequence
+	})
+
+	return sorted
+}
+
+func main() {
+	dependencySource := getDependencySource()
+	dependencyResolver := dependency.NewResolver(dependencySource)
+	if nodes, err := dependencyResolver.Resolve(); err != nil {
+		log.Fatalln("failed to resolve dependency:", err)
+	} else {
+		for _, n := range sortNodes(nodes) {
 			fmt.Println(n)
 		}
-	} else {
-		log.Fatalln("failed to resolve dependency:", err)
 	}
 }
