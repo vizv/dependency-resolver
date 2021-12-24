@@ -99,14 +99,16 @@ func main() {
 		log.Fatalln("invalid arguments:", strings.Join(args, " "))
 	}
 
-	if leveledSequence, err := resolver.NewResolver(dependencySource).Resolve(); err == nil {
-		for _, sequence := range leveledSequence {
-			names := []string{}
-			for _, node := range sequence {
-				names = append(names, node.Name)
+	if sequence, err := resolver.NewResolver(dependencySource).Resolve(); err == nil {
+		sort.Slice(sequence, func(i, j int) bool {
+			l, r := sequence[i], sequence[j]
+			if l.Level == r.Level {
+				return l.Name < r.Name
 			}
-			sort.Strings(names)
-			fmt.Println(strings.Join(names, " "))
+			return l.Level < r.Level
+		})
+		for _, n := range sequence {
+			fmt.Println(n)
 		}
 	} else {
 		log.Fatalln("failed to resolve dependency:", err)

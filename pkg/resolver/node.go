@@ -18,7 +18,7 @@ type Node struct {
 
 // String function used to pretty print this node
 func (n Node) String() string {
-	return fmt.Sprintf("{%d:%s}", n.Level, n.Name)
+	return fmt.Sprintf("%d:%s", n.Level, n.Name)
 }
 
 // NewNode creates a node with a name, and initialize it

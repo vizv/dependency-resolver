@@ -20,7 +20,7 @@ func NewResolver(dependencySource Source) *Resolver {
 	return &Resolver{graph}
 }
 
-func (r *Resolver) Resolve() ([][]*Node, error) {
+func (r *Resolver) Resolve() ([]*Node, error) {
 	maxLevel := uint(0)
 	for leaf := range r.graph.leaves().Iter() {
 		r.graph.resetVisited()
@@ -33,13 +33,7 @@ func (r *Resolver) Resolve() ([][]*Node, error) {
 		}
 	}
 
-	leveledSequence := make([][]*Node, maxLevel)
-	for i := uint(0); i < maxLevel; i++ {
-		leveledSequence[i] = []*Node{}
-	}
-	for n := range r.graph.allNodes.Iter() {
-		leveledSequence[n.Level-1] = append(leveledSequence[n.Level-1], n)
-	}
+	sequence := r.graph.allNodes.ToSlice()
 
-	return leveledSequence, nil
+	return sequence, nil
 }
