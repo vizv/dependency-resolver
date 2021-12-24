@@ -15,10 +15,10 @@ import (
 	"github.com/vizv/dependency-resolver/pkg/resolver"
 )
 
-type ReaderSource func(reader io.Reader) resolver.Source
+type ReaderSource func(reader io.Reader) resolver.DependencySource
 
 func newSplitReaderSource(splitter Splitter) ReaderSource {
-	return func(reader io.Reader) resolver.Source {
+	return func(reader io.Reader) resolver.DependencySource {
 		ch := make(chan resolver.Dependency)
 		scanner := bufio.NewScanner(reader)
 		go func() {
@@ -32,7 +32,7 @@ func newSplitReaderSource(splitter Splitter) ReaderSource {
 }
 
 func newGraphvizReaderSource() ReaderSource {
-	return func(reader io.Reader) resolver.Source {
+	return func(reader io.Reader) resolver.DependencySource {
 		ch := make(chan resolver.Dependency)
 		go func() {
 			buf := new(bytes.Buffer)
@@ -60,7 +60,7 @@ func newGraphvizReaderSource() ReaderSource {
 	}
 }
 
-func newFileSource(filename string, readerSource ReaderSource) resolver.Source {
+func newFileSource(filename string, readerSource ReaderSource) resolver.DependencySource {
 	if file, err := os.Open(filename); err == nil {
 		return readerSource(file)
 	} else {
@@ -71,7 +71,7 @@ func newFileSource(filename string, readerSource ReaderSource) resolver.Source {
 }
 
 func main() {
-	var dependencySource resolver.Source
+	var dependencySource resolver.DependencySource
 
 	defaultSplitter := defaultStringSplitter()
 	defaultReaderSource := newSplitReaderSource(defaultSplitter)

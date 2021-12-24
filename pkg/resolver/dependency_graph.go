@@ -1,17 +1,17 @@
 package resolver
 
-// Graph represent a directed graph for storing dependency information
-type Graph struct {
-	nodes             map[string]*Node
-	lookupMap         map[*Node]*NodeSet
-	dependantNodes    *NodeSet
-	prerequisiteNodes *NodeSet
-	allNodes          *NodeSet
+// DependencyGraph represent a directed graph for storing dependency information
+type DependencyGraph struct {
+	nodes             map[string]*DependencyNode
+	lookupMap         map[*DependencyNode]*DependencyNodeSet
+	dependantNodes    *DependencyNodeSet
+	prerequisiteNodes *DependencyNodeSet
+	allNodes          *DependencyNodeSet
 }
 
 // getOrCreateNode returns a node by name,
-// the node gets created if not exist in Graph
-func (r *Graph) getOrCreateNode(name string) *Node {
+// the node gets created if not exist in graph
+func (r *DependencyGraph) getOrCreateNode(name string) *DependencyNode {
 	np, exists := r.nodes[name]
 
 	if !exists {
@@ -23,9 +23,9 @@ func (r *Graph) getOrCreateNode(name string) *Node {
 	return np
 }
 
-// getOrCreateNodes returns dependant node and prerequisite node for a given Dependency,
-// these nodes get created if not exist in Graph
-func (r *Graph) getOrCreateNodes(dependency *Dependency) (*Node, *Node) {
+// getOrCreateNodes returns dependant node and prerequisite node for a given dependency,
+// these nodes get created if not exist in graph
+func (r *DependencyGraph) getOrCreateNodes(dependency *Dependency) (*DependencyNode, *DependencyNode) {
 	dependant := r.getOrCreateNode(dependency.Dependant)
 	prerequisite := r.getOrCreateNode(dependency.Prerequisite)
 
@@ -33,7 +33,7 @@ func (r *Graph) getOrCreateNodes(dependency *Dependency) (*Node, *Node) {
 }
 
 // addToLookupMap adds a dependant with a prerequisite to a map for reverse lookup
-func (r *Graph) addToLookupMap(dependant *Node, prerequisite *Node) {
+func (r *DependencyGraph) addToLookupMap(dependant *DependencyNode, prerequisite *DependencyNode) {
 	sp, exists := r.lookupMap[prerequisite]
 	if !exists {
 		sp = NewSet()
@@ -42,8 +42,9 @@ func (r *Graph) addToLookupMap(dependant *Node, prerequisite *Node) {
 	sp.Add(dependant)
 }
 
-// addDependency add a Dependency to a Graph, and update information stored in the Graph
-func (r *Graph) addDependency(dependency *Dependency) {
+// addDependency add a dependency to a graph,
+// and update information stored in the graph
+func (r *DependencyGraph) addDependency(dependency *Dependency) {
 	dependant, prerequisite := r.getOrCreateNodes(dependency)
 	dependant.Prerequisites.Add(prerequisite)
 
@@ -54,11 +55,11 @@ func (r *Graph) addDependency(dependency *Dependency) {
 }
 
 // leaves calculates nodes without prerequisite
-func (r *Graph) leaves() *NodeSet {
+func (r *DependencyGraph) leaves() *DependencyNodeSet {
 	return r.prerequisiteNodes.Difference(r.dependantNodes)
 }
 
-func (r *Graph) resolveAll(nodeSet *NodeSet, sequence uint) bool {
+func (r *DependencyGraph) resolveAll(nodeSet *DependencyNodeSet, sequence uint) bool {
 	for leaf := range nodeSet.Iter() {
 		if !r.resolve(leaf, sequence) {
 			return false
@@ -68,8 +69,9 @@ func (r *Graph) resolveAll(nodeSet *NodeSet, sequence uint) bool {
 	return true
 }
 
-// resolve the dependency
-func (r *Graph) resolve(node *Node, sequence uint) bool {
+// resolve the dependency graph recursively,
+// update this node and all dependants only if current sequence is larger
+func (r *DependencyGraph) resolve(node *DependencyNode, sequence uint) bool {
 	if node.visited {
 		return false
 	}

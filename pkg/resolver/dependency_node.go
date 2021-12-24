@@ -4,12 +4,12 @@ import (
 	"fmt"
 )
 
-// Node of a dependency (directed) graph
-type Node struct {
+// DependencyNode of a dependency (directed) graph
+type DependencyNode struct {
 	// Name of this node
 	Name string
 	// Prerequisites is a set nodes this node depends on
-	Prerequisites *NodeSet
+	Prerequisites *DependencyNodeSet
 	// Sequence the minimum possible batch number for processing this node
 	Sequence uint
 
@@ -17,11 +17,11 @@ type Node struct {
 }
 
 // String function used to pretty print this node
-func (n Node) String() string {
+func (n DependencyNode) String() string {
 	return fmt.Sprintf("%d:%s", n.Sequence, n.Name)
 }
 
 // NewNode creates a node with a name, and initialize it
-func NewNode(name string) *Node {
-	return &Node{Name: name, Prerequisites: NewSet()}
+func NewNode(name string) *DependencyNode {
+	return &DependencyNode{Name: name, Prerequisites: NewSet()}
 }

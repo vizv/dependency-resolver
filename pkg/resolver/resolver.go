@@ -1,13 +1,13 @@
 package resolver
 
 type Resolver struct {
-	graph *Graph
+	graph *DependencyGraph
 }
 
-func NewResolver(dependencySource Source) *Resolver {
-	graph := &Graph{
-		nodes:             make(map[string]*Node),
-		lookupMap:         make(map[*Node]*NodeSet),
+func NewResolver(dependencySource DependencySource) *Resolver {
+	graph := &DependencyGraph{
+		nodes:             make(map[string]*DependencyNode),
+		lookupMap:         make(map[*DependencyNode]*DependencyNodeSet),
 		dependantNodes:    NewSet(),
 		allNodes:          NewSet(),
 		prerequisiteNodes: NewSet(),
@@ -20,19 +20,11 @@ func NewResolver(dependencySource Source) *Resolver {
 	return &Resolver{graph}
 }
 
-func (r *Resolver) Resolve() ([]*Node, error) {
-	r.graph.resolveAll(r.graph.leaves(), 1)
-	// for leaf := range r.graph.leaves().Iter() {
-	// 	leafSequence := r.graph.resolve(leaf, 0)
-	// 	if leafSequence == 0 {
-	// 		return nil, NewCircularDependencyError()
-	// 	}
-	// 	if leafSequence > maxLevel {
-	// 		maxLevel = leafSequence
-	// 	}
-	// }
+// Resolve the dependency graph and update sequence for all nodes
+func (r *Resolver) Resolve() ([]*DependencyNode, error) {
+	if !r.graph.resolveAll(r.graph.leaves(), 1) {
+		return nil, NewCircularDependencyError()
+	}
 
-	sequence := r.graph.allNodes.ToSlice()
-
-	return sequence, nil
+	return r.graph.allNodes.ToSlice(), nil
 }
