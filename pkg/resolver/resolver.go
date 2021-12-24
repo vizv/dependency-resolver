@@ -20,22 +20,22 @@ func (r *Resolver) getOrCreateNode(name string) *Node {
 }
 
 func (r *Resolver) addDependency(dependency *Dependency) {
-	parent := r.getOrCreateNode(dependency.Dependant)
-	child := r.getOrCreateNode(dependency.Prerequisite)
+	dependant := r.getOrCreateNode(dependency.Dependant)
+	prerequisite := r.getOrCreateNode(dependency.Prerequisite)
 
-	parent.Prerequisites.Add(child)
+	dependant.Prerequisites.Add(prerequisite)
 
-	r.dependantNodes.Add(parent)
-	r.prerequisiteNodes.Add(child)
-	r.allNodes.Add(parent)
-	r.allNodes.Add(child)
+	r.dependantNodes.Add(dependant)
+	r.prerequisiteNodes.Add(prerequisite)
+	r.allNodes.Add(dependant)
+	r.allNodes.Add(prerequisite)
 
-	sp, exists := r.lookupMap[child]
+	sp, exists := r.lookupMap[prerequisite]
 	if !exists {
 		sp = NewSet()
-		r.lookupMap[child] = sp
+		r.lookupMap[prerequisite] = sp
 	}
-	(*sp).Add(parent)
+	(*sp).Add(dependant)
 }
 
 func (r *Resolver) resolve(n *Node, level uint) uint {
