@@ -78,7 +78,7 @@ func (r resolver) resolve(n *Node, level uint) uint {
 	return maxLevel
 }
 
-func NewResolver(dependencySource <-chan Dependency) Resolver {
+func NewResolver(dependencySource Source) Resolver {
 	resolver := resolver{}
 	resolver.nodes = make(map[interface{}]*Node)
 	resolver.parentsMap = make(map[*Node]*mapset.Set)

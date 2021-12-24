@@ -2,35 +2,23 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
-	resolver "github.com/vizv/dependency-resolver/pkg/resolver"
+	"github.com/goccy/go-graphviz"
+	"github.com/vizv/dependency-resolver/pkg/resolver"
 )
 
-type Splitter func(string) resolver.Dependency
-type ReaderSource func(reader io.Reader) <-chan resolver.Dependency
-
-const DEFAULT_SEP = " "
-
-func newStringSplitter(sep string) Splitter {
-	return func(dependencyString string) resolver.Dependency {
-		tokens := strings.SplitN(dependencyString, sep, 2)
-
-		return resolver.Dependency{Dependant: tokens[0], Prerequisite: tokens[1]}
-	}
-}
-
-func defaultStringSplitter() Splitter {
-	return newStringSplitter(DEFAULT_SEP)
-}
+type ReaderSource func(reader io.Reader) resolver.Source
 
 func newSplitReaderSource(splitter Splitter) ReaderSource {
-	return func(reader io.Reader) <-chan resolver.Dependency {
+	return func(reader io.Reader) resolver.Source {
 		ch := make(chan resolver.Dependency)
 		scanner := bufio.NewScanner(reader)
 		go func() {
@@ -43,17 +31,36 @@ func newSplitReaderSource(splitter Splitter) ReaderSource {
 	}
 }
 
-func newGraphvizReaderSource(reader io.Reader) ReaderSource {
-	return func(reader io.Reader) <-chan resolver.Dependency {
+func newGraphvizReaderSource() ReaderSource {
+	return func(reader io.Reader) resolver.Source {
 		ch := make(chan resolver.Dependency)
 		go func() {
+			buf := new(bytes.Buffer)
+			if _, err := buf.ReadFrom(reader); err != nil {
+				log.Fatalf("IO error: %v", err)
+			}
+			if graph, err := graphviz.ParseBytes(buf.Bytes()); err != nil {
+				log.Fatalf("graphviz parsing error: %v", err)
+			} else {
+				node := graph.FirstNode()
+				for node != nil {
+					dependant := node.Name()
+					edge := graph.FirstOut(node)
+					for edge != nil {
+						prerequisite := edge.Node().Name()
+						ch <- resolver.Dependency{Dependant: dependant, Prerequisite: prerequisite}
+						edge = graph.NextOut(edge)
+					}
+					node = graph.NextNode(node)
+				}
+			}
 			close(ch)
 		}()
 		return ch
 	}
 }
 
-func newFileSource(filename string, readerSource ReaderSource) <-chan resolver.Dependency {
+func newFileSource(filename string, readerSource ReaderSource) resolver.Source {
 	if file, err := os.Open(filename); err == nil {
 		return readerSource(file)
 	} else {
@@ -64,7 +71,7 @@ func newFileSource(filename string, readerSource ReaderSource) <-chan resolver.D
 }
 
 func main() {
-	var dependencySource <-chan resolver.Dependency
+	var dependencySource resolver.Source
 
 	defaultSplitter := defaultStringSplitter()
 	defaultReaderSource := newSplitReaderSource(defaultSplitter)
@@ -75,8 +82,18 @@ func main() {
 		dependencySource = defaultReaderSource(os.Stdin)
 	case 2:
 		filename := os.Args[1]
+		ext := filepath.Ext(filename)
+		var readerSource ReaderSource
+		switch ext {
+		case ".in":
+			readerSource = defaultReaderSource
+		case ".gv":
+			readerSource = newGraphvizReaderSource()
+		default:
+			log.Fatalf("unsupported file: %s", filename)
+		}
 		log.Printf("read from '%s'\n", filename)
-		dependencySource = newFileSource(filename, defaultReaderSource)
+		dependencySource = newFileSource(filename, readerSource)
 	default:
 		args := os.Args[1:]
 		log.Fatalln("invalid arguments:", strings.Join(args, " "))
