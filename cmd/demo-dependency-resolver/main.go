@@ -1,64 +1,15 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/goccy/go-graphviz"
 	"github.com/vizv/dependency-resolver/pkg/dependency"
 )
-
-type ReaderSource func(reader io.Reader) dependency.Source
-
-func newSplitReaderSource(splitter Splitter) ReaderSource {
-	return func(reader io.Reader) dependency.Source {
-		ch := make(chan dependency.Dependency)
-		scanner := bufio.NewScanner(reader)
-		go func() {
-			for scanner.Scan() {
-				ch <- splitter(scanner.Text())
-			}
-			close(ch)
-		}()
-		return ch
-	}
-}
-
-func newGraphvizReaderSource() ReaderSource {
-	return func(reader io.Reader) dependency.Source {
-		ch := make(chan dependency.Dependency)
-		go func() {
-			buf := new(bytes.Buffer)
-			if _, err := buf.ReadFrom(reader); err != nil {
-				log.Fatalf("IO error: %v", err)
-			}
-			if graph, err := graphviz.ParseBytes(buf.Bytes()); err != nil {
-				log.Fatalf("graphviz parsing error: %v", err)
-			} else {
-				node := graph.FirstNode()
-				for node != nil {
-					dependant := node.Name()
-					edge := graph.FirstOut(node)
-					for edge != nil {
-						prerequisite := edge.Node().Name()
-						ch <- dependency.Dependency{Dependant: dependant, Prerequisite: prerequisite}
-						edge = graph.NextOut(edge)
-					}
-					node = graph.NextNode(node)
-				}
-			}
-			close(ch)
-		}()
-		return ch
-	}
-}
 
 func newFileSource(filename string, readerSource ReaderSource) dependency.Source {
 	if file, err := os.Open(filename); err == nil {
@@ -73,8 +24,8 @@ func newFileSource(filename string, readerSource ReaderSource) dependency.Source
 func main() {
 	var dependencySource dependency.Source
 
-	defaultSplitter := defaultStringSplitter()
-	defaultReaderSource := newSplitReaderSource(defaultSplitter)
+	defaultSplitter := defaultSplitParser()
+	defaultReaderSource := newParseReaderSource(defaultSplitter)
 
 	switch len(os.Args) {
 	case 1:

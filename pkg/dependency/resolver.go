@@ -18,7 +18,7 @@ func (r *Resolver) Resolve() ([]*Node, error) {
 func NewResolver(src Source) *Resolver {
 	graph := NewGraph()
 	for dependency := range src {
-		graph.AddDependency(&dependency)
+		graph.AddDependency(dependency)
 	}
 
 	return &Resolver{graph}
