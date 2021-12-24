@@ -14,6 +14,7 @@ func (r *Resolver) getOrCreateNode(name string) *Node {
 	if !exists {
 		np = NewNode(name)
 		r.nodes[name] = np
+		r.allNodes.Add(np)
 	}
 
 	return np
@@ -41,8 +42,8 @@ func (r *Resolver) addDependency(dependency *Dependency) {
 
 	r.dependantNodes.Add(dependant)
 	r.prerequisiteNodes.Add(prerequisite)
-	r.allNodes.Add(dependant)
-	r.allNodes.Add(prerequisite)
+
+	r.addToLookupMap(dependant, prerequisite)
 }
 
 func (r *Resolver) resolve(n *Node, level uint) uint {
@@ -101,7 +102,7 @@ func (r *Resolver) resetVisited() {
 	}
 }
 
-func (r *Resolver) Resolve() ([][]Node, error) {
+func (r *Resolver) Resolve() ([][]*Node, error) {
 	maxLevel := uint(0)
 	for leaf := range r.leaves().Iter() {
 		r.resetVisited()
@@ -114,12 +115,11 @@ func (r *Resolver) Resolve() ([][]Node, error) {
 		}
 	}
 
-	leveledSequence := make([][]Node, maxLevel)
+	leveledSequence := make([][]*Node, maxLevel)
 	for i := uint(0); i < maxLevel; i++ {
-		leveledSequence[i] = []Node{}
+		leveledSequence[i] = []*Node{}
 	}
-	for np := range r.allNodes.Iter() {
-		n := *np
+	for n := range r.allNodes.Iter() {
 		leveledSequence[n.Level-1] = append(leveledSequence[n.Level-1], n)
 	}
 
