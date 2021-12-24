@@ -9,11 +9,11 @@ import (
 	"sort"
 	"strings"
 
-	// "github.com/goccy/go-graphviz"
 	resolver "github.com/vizv/dependency-resolver/pkg/resolver"
 )
 
 type Splitter func(string) resolver.Dependency
+type ReaderSource func(reader io.Reader) <-chan resolver.Dependency
 
 const DEFAULT_SEP = " "
 
@@ -29,21 +29,33 @@ func defaultStringSplitter() Splitter {
 	return newStringSplitter(DEFAULT_SEP)
 }
 
-func newReaderSource(reader io.Reader, splitter Splitter) <-chan resolver.Dependency {
-	ch := make(chan resolver.Dependency)
-	scanner := bufio.NewScanner(reader)
-	go func() {
-		for scanner.Scan() {
-			ch <- splitter(scanner.Text())
-		}
-		close(ch)
-	}()
-	return ch
+func newSplitReaderSource(splitter Splitter) ReaderSource {
+	return func(reader io.Reader) <-chan resolver.Dependency {
+		ch := make(chan resolver.Dependency)
+		scanner := bufio.NewScanner(reader)
+		go func() {
+			for scanner.Scan() {
+				ch <- splitter(scanner.Text())
+			}
+			close(ch)
+		}()
+		return ch
+	}
 }
 
-func newFileSource(filename string, splitter Splitter) <-chan resolver.Dependency {
+func newGraphvizReaderSource(reader io.Reader) ReaderSource {
+	return func(reader io.Reader) <-chan resolver.Dependency {
+		ch := make(chan resolver.Dependency)
+		go func() {
+			close(ch)
+		}()
+		return ch
+	}
+}
+
+func newFileSource(filename string, readerSource ReaderSource) <-chan resolver.Dependency {
 	if file, err := os.Open(filename); err == nil {
-		return newReaderSource(file, splitter)
+		return readerSource(file)
 	} else {
 		log.Fatalf("cannot create file source: %v", err)
 	}
@@ -52,17 +64,19 @@ func newFileSource(filename string, splitter Splitter) <-chan resolver.Dependenc
 }
 
 func main() {
-	splitter := defaultStringSplitter()
 	var dependencySource <-chan resolver.Dependency
+
+	defaultSplitter := defaultStringSplitter()
+	defaultReaderSource := newSplitReaderSource(defaultSplitter)
 
 	switch len(os.Args) {
 	case 1:
 		log.Println("read from stdin")
-		dependencySource = newReaderSource(os.Stdin, splitter)
+		dependencySource = defaultReaderSource(os.Stdin)
 	case 2:
 		filename := os.Args[1]
 		log.Printf("read from '%s'\n", filename)
-		dependencySource = newFileSource(filename, splitter)
+		dependencySource = newFileSource(filename, defaultReaderSource)
 	default:
 		args := os.Args[1:]
 		log.Fatalln("invalid arguments:", strings.Join(args, " "))
