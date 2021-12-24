@@ -9,3 +9,4 @@ Resolver DependencyNodeSet
 DependencyGraph DependencyNode
 DependencyGraph DependencyNodeSet
 DependencyGraph Dependency
+DependencyGraph CircularDependencyError

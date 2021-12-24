@@ -59,34 +59,34 @@ func (g *DependencyGraph) leaves() *DependencyNodeSet {
 	return g.prerequisiteNodes.Difference(g.dependantNodes)
 }
 
-func (g *DependencyGraph) resolveAll(s *DependencyNodeSet, seq uint) bool {
+func (g *DependencyGraph) resolveAll(s *DependencyNodeSet, seq uint) error {
 	for leaf := range s.Iter() {
-		if !g.resolve(leaf, seq) {
-			return false
+		if err := g.resolve(leaf, seq); err != nil {
+			return err
 		}
 	}
 
-	return true
+	return nil
 }
 
 // resolve the dependency graph recursively,
 // update this node and all dependants only if current sequence is larger
-func (g *DependencyGraph) resolve(n *DependencyNode, seq uint) bool {
+func (g *DependencyGraph) resolve(n *DependencyNode, seq uint) error {
 	if n.visited {
-		return false
+		return NewCircularDependencyError()
 	}
 	n.visited = true
 	defer func() { n.visited = false }()
 
 	if seq <= n.Sequence {
-		return true
+		return nil
 	}
 	n.Sequence = seq
-	if pres, okay := g.lookupMap[n]; okay {
-		if !g.resolveAll(pres, seq+1) {
-			return false
+	if pres, exists := g.lookupMap[n]; exists {
+		if err := g.resolveAll(pres, seq+1); err != nil {
+			return err
 		}
 	}
 
-	return true
+	return nil
 }

@@ -22,8 +22,8 @@ func NewResolver(dependencySource DependencySource) *Resolver {
 
 // Resolve the dependency graph and update sequence for all nodes
 func (r *Resolver) Resolve() ([]*DependencyNode, error) {
-	if !r.graph.resolveAll(r.graph.leaves(), 1) {
-		return nil, NewCircularDependencyError()
+	if err := r.graph.resolveAll(r.graph.leaves(), 1); err != nil {
+		return nil, err
 	}
 
 	return r.graph.allNodes.ToSlice(), nil
