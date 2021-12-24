@@ -99,7 +99,7 @@ func main() {
 		log.Fatalln("invalid arguments:", strings.Join(args, " "))
 	}
 
-	if sequence, err := resolver.NewResolver(dependencySource).Resolve(); err == nil {
+	if sequence, err := resolver.NewDependencyResolver(dependencySource).Resolve(); err == nil {
 		sort.Slice(sequence, func(i, j int) bool {
 			l, r := sequence[i], sequence[j]
 			if l.Sequence == r.Sequence {

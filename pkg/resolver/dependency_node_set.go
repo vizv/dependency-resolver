@@ -2,23 +2,28 @@ package resolver
 
 import "fmt"
 
+// DependencyNodeSet is a set for dependency nodes
 type DependencyNodeSet struct {
 	mapset map[*DependencyNode]bool
 }
 
-func (s *DependencyNodeSet) Size() int {
+// Count of nodes in this set
+func (s *DependencyNodeSet) Count() int {
 	return len(s.mapset)
 }
 
+// Add a node to the set
 func (s *DependencyNodeSet) Add(item *DependencyNode) {
 	s.mapset[item] = true
 }
 
-func (s *DependencyNodeSet) Del(item *DependencyNode) {
+// Delete a node from the set
+func (s *DependencyNodeSet) Delete(item *DependencyNode) {
 	delete(s.mapset, item)
 }
 
-func (s *DependencyNodeSet) Iter() <-chan *DependencyNode {
+// Iterator used to iterate through the set
+func (s *DependencyNodeSet) Iterator() <-chan *DependencyNode {
 	ch := make(chan *DependencyNode)
 	go func() {
 		for item := range s.mapset {
@@ -30,38 +35,44 @@ func (s *DependencyNodeSet) Iter() <-chan *DependencyNode {
 	return ch
 }
 
+// Clone the set
 func (s *DependencyNodeSet) Clone() *DependencyNodeSet {
-	set := NewSet()
+	set := NewDependencyNodeSet()
 
-	for item := range s.Iter() {
+	for item := range s.Iterator() {
 		set.Add(item)
 	}
 
 	return set
 }
 
-func (sl *DependencyNodeSet) Difference(sr *DependencyNodeSet) *DependencyNodeSet {
+// Exclude nodes from another set
+// returns a new set
+func (sl *DependencyNodeSet) Exclude(sr *DependencyNodeSet) *DependencyNodeSet {
 	set := sl.Clone()
 
-	for item := range sr.Iter() {
-		set.Del(item)
+	for item := range sr.Iterator() {
+		set.Delete(item)
 	}
 
 	return set
 }
 
+// Union nodes with another set
+// returns a new set
 func (sl *DependencyNodeSet) Union(sr *DependencyNodeSet) *DependencyNodeSet {
 	set := sl.Clone()
 
-	for item := range sr.Iter() {
+	for item := range sr.Iterator() {
 		set.Add(item)
 	}
 
 	return set
 }
 
+// ToSlice function converts current set to slice
 func (s *DependencyNodeSet) ToSlice() []*DependencyNode {
-	slice := make([]*DependencyNode, s.Size())
+	slice := make([]*DependencyNode, s.Count())
 
 	i := 0
 	for item := range s.mapset {
@@ -72,10 +83,12 @@ func (s *DependencyNodeSet) ToSlice() []*DependencyNode {
 	return slice
 }
 
+// String function used to pretty print this set
 func (s *DependencyNodeSet) String() string {
 	return fmt.Sprintf("%v", s.ToSlice())
 }
 
-func NewSet() *DependencyNodeSet {
+// NewDependencyNodeSet creates an empty set, and initialize it
+func NewDependencyNodeSet() *DependencyNodeSet {
 	return &DependencyNodeSet{mapset: make(map[*DependencyNode]bool)}
 }

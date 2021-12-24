@@ -1,12 +1,10 @@
 main DependencySource
 main Dependency
-main Resolver
+main DependencyResolver
 DependencySource Dependency
-Resolver DependencyGraph
-Resolver DependencySource
-Resolver DependencyNode
-Resolver DependencyNodeSet
+DependencyResolver DependencyGraph
+DependencyResolver DependencySource
+DependencyResolver DependencyNode
 DependencyGraph DependencyNode
-DependencyGraph DependencyNodeSet
 DependencyGraph Dependency
 DependencyGraph CircularDependencyError

@@ -21,7 +21,7 @@ func (n DependencyNode) String() string {
 	return fmt.Sprintf("%d:%s", n.Sequence, n.Name)
 }
 
-// NewNode creates a node with a name, and initialize it
-func NewNode(name string) *DependencyNode {
-	return &DependencyNode{Name: name, Prerequisites: NewSet()}
+// NewDependencyNode creates a node with a name, and initialize it
+func NewDependencyNode(name string) *DependencyNode {
+	return &DependencyNode{Name: name, Prerequisites: NewDependencyNodeSet()}
 }
