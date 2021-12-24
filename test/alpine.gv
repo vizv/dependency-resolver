@@ -1,3 +1,5 @@
+// generate with: `docker run --rm alpine apk dot --installed > test/alpine.gv`
+
 digraph "apkindex" {
   rankdir=LR;
   node [shape=box];
