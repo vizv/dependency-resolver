@@ -1,19 +1,15 @@
 package resolver
 
-import (
-	mapset "github.com/vizv/dependency-resolver/pkg/set"
-)
-
 type Resolver interface {
 	Resolve() ([][]Node, error)
 }
 
 type resolver struct {
 	nodes       map[interface{}]*Node
-	parentsMap  map[*Node]*mapset.Set
-	parentNodes mapset.Set
-	childNodes  mapset.Set
-	allNodes    mapset.Set
+	parentsMap  map[*Node]*Set
+	parentNodes Set
+	childNodes  Set
+	allNodes    Set
 }
 
 func (r resolver) getOrCreateNode(value interface{}) *Node {
@@ -21,7 +17,7 @@ func (r resolver) getOrCreateNode(value interface{}) *Node {
 		return np
 	} else {
 		n := Node{}
-		n.Prerequisites = mapset.NewSet()
+		n.Prerequisites = NewSet()
 		n.Value = value
 		r.nodes[value] = &n
 		return &n
@@ -42,7 +38,7 @@ func (r resolver) addDependency(dependency *Dependency) {
 	if sp, okay := r.parentsMap[child]; okay {
 		(*sp).Add(parent)
 	} else {
-		s := mapset.NewSet()
+		s := NewSet()
 		r.parentsMap[child] = &s
 		s.Add(parent)
 	}
@@ -81,10 +77,10 @@ func (r resolver) resolve(n *Node, level uint) uint {
 func NewResolver(dependencySource Source) Resolver {
 	resolver := resolver{}
 	resolver.nodes = make(map[interface{}]*Node)
-	resolver.parentsMap = make(map[*Node]*mapset.Set)
-	resolver.parentNodes = mapset.NewSet()
-	resolver.allNodes = mapset.NewSet()
-	resolver.childNodes = mapset.NewSet()
+	resolver.parentsMap = make(map[*Node]*Set)
+	resolver.parentNodes = NewSet()
+	resolver.allNodes = NewSet()
+	resolver.childNodes = NewSet()
 
 	for dependency := range dependencySource {
 		resolver.addDependency(&dependency)
@@ -93,7 +89,7 @@ func NewResolver(dependencySource Source) Resolver {
 	return resolver
 }
 
-func (r resolver) leaves() mapset.Set {
+func (r resolver) leaves() Set {
 	return r.childNodes.Difference(r.parentNodes)
 }
 
