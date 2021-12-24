@@ -1,12 +1,12 @@
 SOURCE := cmd/demo-dependency-resolver
 TARGET := ./demo-dependency-resolver
 
+GV_SCRIPT := scripts/gen-gv.sh
+
 TEST_IN := $(wildcard test/*.in)
 TEST_IN_GV := $(TEST_IN:=.gv)
 TEST_GV := $(filter-out $(TEST_IN_GV), $(wildcard test/*.gv))
 TEST_CMP := $(TEST_IN:=.cmp) $(TEST_GV:=.cmp)
-
-GV_SCRIPT := scripts/gen-gv.sh
 
 .PHONY: all draw test clean $(TARGET)
 
